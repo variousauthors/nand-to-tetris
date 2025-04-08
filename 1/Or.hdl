@@ -1,0 +1,26 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+/**
+ * Or gate:
+ * if (a or b) out = 1, else out = 0
+ a b not a b and nand or
+ 0 0     1 1   1    0  0
+ 0 1     1 0   0    1  1
+ 1 0     0 1   0    1  1
+ 1 1     0 0   0    1  1
+
+(~a and ~b) => ~(a || b)
+
+ */
+CHIP Or {
+    IN a, b;
+    OUT out;
+
+    PARTS:
+    Not(in=a, out=notA);
+    Not(in=b, out=notB);
+    And(a=notA, b=notB, out=notAorB);
+    Not(in=notAorB, out=out);
+    //// Replace this comment with your code.
+}

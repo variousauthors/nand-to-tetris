@@ -1,0 +1,107 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+/**
+ * The Hack Central Processing unit (CPU).
+ * Parses the binary code in the instruction input and executes it according to the
+ * Hack machine language specification. In the case of a C-instruction, computes the
+ * function specified by the instruction. If the instruction specifies to read a memory
+ * value, the inM input is expected to contain this value. If the instruction specifies
+ * to write a value to the memory, sets the outM output to this value, sets the addressM
+ * output to the target address, and asserts the writeM output (when writeM = 0, any
+ * value may appear in outM).
+ * If the reset input is 0, computes the address of the next instruction and sets the
+ * pc output to that value. If the reset input is 1, sets pc to 0.
+ * Note: The outM and writeM outputs are combinational: they are affected by the
+ * instruction's execution during the current cycle. The addressM and pc outputs are
+ * clocked: although they are affected by the instruction's execution, they commit to
+ * their new values only in the next cycle.
+ */
+CHIP CPU {
+
+    IN  inM[16],         // M value input  (M = contents of RAM[A])
+        instruction[16], // Instruction for execution
+        reset;           // Signals whether to re-start the current
+                         // program (reset==1) or continue executing
+                         // the current program (reset==0).
+
+    OUT outM[16],        // M value output
+        writeM,          // Write to M? 
+        addressM[15],    // Address in data memory (of M)
+        pc[15];          // address of next instruction
+
+    PARTS:
+
+    // A-instruction format
+    // 0vvvvvvvvvvvvvvv
+    // so instruction[15]
+    // is the op code
+
+    // C-instruction format
+    // 111accccccdddjjj
+    // a = instruction[12]
+    // loadA = instruction[5]
+    // loadD = instruction[4]
+    // writeM = instruction[3]
+
+    // we only write during C instructions
+    // when ddd is XX1
+    And(a=instruction[3], b=instruction[15], out=writeM);
+
+    // D Register
+    // we only load D during C-instructions
+    And(a=instruction[4], b=instruction[15], out=loadD);
+    DRegister(in=ALUOutput, load=loadD, out=dRegister);
+
+    // A Register
+    // we load the a register when:
+    // first bit of d is set
+    // this is an A-instruction
+    Not(in=instruction[15], out=aInstruction);    
+    Or(a=aInstruction, b=instruction[5], out=loadA);
+    Mux16(a=instruction, b=ALUOutput, sel=instruction[15], out=aValue);
+    ARegister(in=aValue, load=loadA, out=aRegister, out[0..14]=addressM);    
+    Mux16(a=aRegister, b=inM, sel=instruction[12], out=inMorA);
+
+    // computation control bits
+    // if (zx == 1) sets x = 0        // 16-bit constant
+    // if (nx == 1) sets x = !x       // bitwise not
+    // if (zy == 1) sets y = 0        // 16-bit constant
+    // if (ny == 1) sets y = !y       // bitwise not
+    // if (f == 1)  sets out = x + y  // integer 2's complement addition
+    // if (f == 0)  sets out = x & y  // bitwise and
+    // if (no == 1) sets out = !out   // bitwise not
+    
+    // zx = instruction[11]
+    // nx = instruction[10]
+    // zy = instruction[9]
+    // ny = instruction[8]    
+    //  f = instruction[7]
+    // no = instruction[6]
+    ALU(x=dRegister, y=inMorA, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=ALUOutput, out=outM, zr=zr, ng=ng);
+
+    // pre-compute all possibilities
+    Or(a=ng, b=zr, out=LTE);
+    Not(in=LTE, out=GT);
+    Or(a=GT, b=zr, out=GTE);
+    Not(in=zr, out=NEQ);
+
+    // round robin to get jump
+    Mux(a=false, b=GT, sel=instruction[0], out=GTorFALSE);
+    Mux(a=zr, b=GTE, sel=instruction[0], out=EQorGTE);
+    Mux(a=ng, b=NEQ, sel=instruction[0], out=LTorNEQ);
+    Mux(a=LTE, b=true, sel=instruction[0], out=LTEorTRUE);
+
+    Mux(a=GTorFALSE, b=EQorGTE, sel=instruction[1], out=top);
+    Mux(a=LTorNEQ, b=LTEorTRUE, sel=instruction[1], out=bottom);
+
+    Mux(a=top, b=bottom , sel=instruction[2], out=jump);
+
+    And(a=jump, b=instruction[15], out=reallyJump);
+    Not(in=reallyJump, out=increment);
+    // ok but now, we have to OR jjj with
+    // output from the ALU to see if we actually jump
+    PC(in=aRegister, load=reallyJump, inc=increment, reset=reset, out[0..14]=pc);
+
+
+}
