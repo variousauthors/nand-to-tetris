@@ -197,23 +197,69 @@ bool statement(Buffer *buffer, IR *ir)
   case TK_RETURN: {
     match(buffer, TK_RETURN);
 
-    // the return address is guaranteed to be on the stack
+    // value at the top of the stack is the return value
+    // *ARG = pop
+    emitPopIntoD();
+    printf("@ARG\n");
+    printf("A=M\n");
+    printf("M=D\n"); // *ARG = pop
+
+    // SP = ARG + 1
+    printf("@ARG\n");
+    printf("D=M+1\n");
+    printf("@SP\n");
+    printf("M=D\n"); // SP = ARG + 1
+
+    // restore caller context
+
     // endFrame = LCL
     // returnAdd = *(LCL - 5)
 
-    // value at the top of the stack is the return value
-    // put that into ARG 0
-    // *ARG = pop
-    // SP = ARG + 1
+    printf("@LCL\n");
+    printf("D=M\n");
+    printf("@R13\n");
+    printf("M=D-1\n"); // R13 := endFrame - 1
 
-    // restore context
-    // THAT = *(endframe - 1)
-    // THIS = *(endframe - 2)
-    // ARG = *(endframe - 3)
-    // LCL = *(endframe - 4)
+    // THAT
+    printf("A=M\n");
+    printf("D=M\n"); // dereference endFrame
+    printf("@THAT\n");
+    printf("M=D\n"); // THAT = *(endframe - 1)
+
+    // THIS
+    printf("@R13\n");
+    printf("M=M-1\n"); // R13 := endFrame - 2
+
+    printf("A=M\n");
+    printf("D=M\n"); // dereference endFrame
+    printf("@THIS\n");
+    printf("M=D\n"); // THIS = *(endframe - 2)
+
+    // ARG
+    printf("@R13\n");
+    printf("M=M-1\n"); // R13 := endFrame - 3
+
+    printf("A=M\n");
+    printf("D=M\n"); // dereference endFrame
+    printf("@ARG\n");
+    printf("M=D\n"); // ARG = *(endframe - 3)
+
+    // LCL
+    printf("@R13\n");
+    printf("M=M-1\n"); // R13 := endFrame - 4
+
+    printf("A=M\n");
+    printf("D=M\n"); // dereference endFrame
+    printf("@LCL\n");
+    printf("M=D\n"); // LCL = *(endframe - 4)
 
     // finally GOTO retAddr
+    printf("@R13\n");
+    printf("M=M-1\n"); // R13 := endFrame - 5
 
+    printf("A=M\n");
+    printf("D=M\n"); // dereference endFrame
+    printf("D;JMP\n"); // goto *(endFrame - 5)
 
     return true;
   }
