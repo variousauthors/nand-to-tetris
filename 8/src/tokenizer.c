@@ -11,7 +11,7 @@ char identifierBuffer[BSIZE];
 
 bool isIdPart(char c)
 {
-  return isalnum(c) || c == '-' || c == '$' || c == '.';
+  return isalnum(c) || c == '-' || c == '$' || c == '.' || c == '_';
 }
 
 Token nextToken(Buffer *buffer)

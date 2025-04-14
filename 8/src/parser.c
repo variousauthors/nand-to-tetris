@@ -171,6 +171,16 @@ bool statement(Buffer *buffer, IR *ir)
 
     return match(buffer, TK_IDENTIFIER);
   }
+  case TK_GOTO: {
+    match(buffer, TK_GOTO);
+
+    // just jump
+
+    printf("@%s\n", symtable[tokenval].lexptr);
+    printf("0;JEQ\n");
+
+    return match(buffer, TK_IDENTIFIER);
+  }
   default:
     error("encountered unexpected token");
   }
@@ -288,29 +298,16 @@ bool pop(Buffer *buffer)
 
     if (tokenval == 0)
     {
-      emitDGetsBasePlusOffset("THIS", 0);
-
-      printf("@R15\n"); // R13, R14, and R15 are our scratch registers
-      printf("M=D\n");
-
+      // we want to set THIS to the value we pop, not dereference it
       emitPopIntoD();
-
-      printf("@R15\n");
-      printf("A=M\n"); // jump to the addr
-      printf("M=D\n"); // store at addr
+      printf("@THIS\n");
+      printf("M=D\n");
     }
     else if (tokenval == 1)
     {
-      emitDGetsBasePlusOffset("THAT", 0);
-
-      printf("@R15\n"); // R13, R14, and R15 are our scratch registers
-      printf("M=D\n");
-
       emitPopIntoD();
-
-      printf("@R15\n");
-      printf("A=M\n"); // jump to the addr
-      printf("M=D\n"); // store at addr
+      printf("@THAT\n");
+      printf("M=D\n");
     }
     else
     {
@@ -445,30 +442,16 @@ bool push(Buffer *buffer)
 
     if (tokenval == 0)
     {
-      // addr = this + n
-      printf("@%d\n", 0);
-      printf("D=A\n");
+      // we want to take the actual value of @THIS
+      // and push it to the stack
       printf("@THIS\n");
-      printf("D=D+M\n");
-
-      // dereference this + n into D
-      printf("A=D\n");
       printf("D=M\n");
-
       emitPushD();
     }
     else if (tokenval == 1)
     {
-      // addr = that + n
-      printf("@%d\n", 0);
-      printf("D=A\n");
       printf("@THAT\n");
-      printf("D=D+M\n");
-
-      // dereference local + n into D
-      printf("A=D\n");
       printf("D=M\n");
-
       emitPushD();
     }
     else

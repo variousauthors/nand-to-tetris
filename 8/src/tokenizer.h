@@ -20,6 +20,7 @@ typedef enum
   TK_POINTER,
   TK_LABEL,
   TK_IF_GOTO,
+  TK_GOTO,
   TK_IDENTIFIER,
   TK_POP,
   TK_PUSH,
