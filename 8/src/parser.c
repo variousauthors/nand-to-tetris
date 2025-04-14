@@ -337,7 +337,13 @@ bool logicalOr(Buffer *buffer)
 }
 bool logicalNot(Buffer *buffer)
 {
-  error("logicalNot\n");
+  emitPopIntoD();
+
+  // apply logical not
+  printf("D=!D\n");
+
+  emitPushD();
+
   return true;
 }
 
