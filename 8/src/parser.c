@@ -31,6 +31,7 @@ int parse(FILE *file)
   IR ir = {0};
   ir.nodes = malloc(sizeof(IRNode) * IR_SIZE);
   ir.current = 0;
+  lineno = 1;
 
   while (lookahead != TK_EOF && statement(&buffer, &ir))
     ;
@@ -150,15 +151,8 @@ bool statement(Buffer *buffer, IR *ir)
 
     match(buffer, TK_IDENTIFIER);
 
-    // generate and push return address Xxx$ret.1
-    // push caller's stack frame
-    // LCL, ARG, THIS, THAT
-    // ARG = SPI - 5 - nArgs (tokenval)
-    // LCL = SP
-    // emit goto functionName
-    // emit return label
+    emitCall(id, currentFile, tokenval);
 
-    error("call is unimplemented");
     return match(buffer, TK_NUMBER);
   }
   case TK_IF_GOTO: {

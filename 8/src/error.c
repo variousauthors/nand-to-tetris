@@ -4,7 +4,7 @@
 
 bool error(const char *m)
 {
-  fprintf(stderr, "line %d: %s\n", lineno, m);
+  fprintf(stderr, "%s line %d: %s\n", currentFile, lineno, m);
   exit(1);
   return false;
 }

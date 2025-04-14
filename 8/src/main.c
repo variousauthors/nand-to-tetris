@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/stat.h>
 #include <dirent.h>
 #include <_stdio.h>
@@ -6,11 +7,28 @@
 #include "parser.h"
 #include "init.h"
 #include "emitter.h"
+#include "global.h"
 #include <sys/syslimits.h>
+
+char *currentFile;
+
+void getModuleName(const char *filename, char *out, size_t outlen)
+{
+  strncpy(out, filename, outlen);
+  out[sizeof(out) - 1] = '\0'; // ensure null-terminated
+
+  char *dot = strrchr(out, '.');
+  if (dot != NULL)
+  {
+    *dot = '\0'; // truncate at the last dot
+  }
+
+  return;
+}
 
 bool isVMFile(char *name, int namelen)
 {
-  return name[namelen - 1] == 'm' || name[namelen - 2] == 'v' || name[namelen - 3] == '.';
+  return name[namelen - 1] == 'm' && name[namelen - 2] == 'v' && name[namelen - 3] == '.';
 }
 
 int parseSingleFile(char *path)
@@ -79,6 +97,10 @@ int main(int argc, char *argv[])
         continue;
       }
 
+      char moduleName[PATH_MAX];
+      getModuleName(entry->d_name, moduleName, PATH_MAX);
+
+      currentFile = moduleName;
       char full_path[PATH_MAX];
       snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
 

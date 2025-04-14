@@ -4,8 +4,13 @@
 #include <stdbool.h>
 #include "error.h"
 #include "emitter.h"
+#include "global.h"
+#include <sys/syslimits.h>
+#include <_stdio.h>
 
 #define TEMP_BASEADDR 5
+
+int ret = 0;
 
 void emitBootstrap()
 {
@@ -15,12 +20,51 @@ void emitBootstrap()
   printf("A=M\n");
   printf("M=D\n"); // SP = 256
 
-  emitCall("Sys.init");
+  emitGoto("Sys.init");
+  // emitCall("Sys.init", currentFile, 1);
 }
 
-void emitCall(char *functionName) {
+void emitCall(char *functionName, char *moduleName, int nArgs)
+{
+  emitGoto(functionName);
 
-  error("emitCall unimplemented");
+  // generate and push return address Xxx$ret.1
+  char retLabel[PATH_MAX];
+  snprintf(retLabel, sizeof(retLabel), "%s%s.%d", moduleName, "$ret", ret++);
+
+  printf("(%s)\n", retLabel);
+
+  // push caller's stack frame
+  // LCL, ARG, THIS, THAT
+  printf("@LCL\n");
+  printf("D=M\n");
+  emitPushD();
+
+  printf("@ARG\n");
+  printf("D=M\n");
+  emitPushD();
+
+  printf("@THIS\n");
+  printf("D=M\n");
+  emitPushD();
+
+  printf("@THAT\n");
+  printf("D=M\n");
+  emitPushD();
+
+  // ARG = SP - 5 - nArgs (tokenval)
+  printf("@%d\n", 5 + nArgs); // offset
+  printf("D=A\n");
+  printf("@SP\n");
+  printf("D=M-D\n"); // SP - 5
+  printf("@ARG\n");
+  printf("M=D\n"); // ARG = SP - 5 - nArgs
+
+  // LCL = SP
+  printf("@SP\n");
+  printf("D=M\n");
+  printf("@LCL\n");
+  printf("M=D\n");
 }
 
 void emitPushTemp(int offset)
@@ -191,7 +235,7 @@ void emitPopStatic(int n)
 void emitGoto(char *label)
 {
   printf("@%s\n", label);
-  printf("JMP\n");
+  printf("0;JMP\n");
 }
 void emitIfGoto(char *label)
 {
@@ -265,8 +309,7 @@ void emitReturn()
   printf("M=M-1\n"); // R13 := endFrame - 5
 
   printf("A=M\n");
-  printf("D=M\n");   // dereference endFrame
-  printf("D;JMP\n"); // goto *(endFrame - 5)
+  printf("0;JMP\n"); // goto *(endFrame - 5)
 }
 
 void emitInitLocal(int i)

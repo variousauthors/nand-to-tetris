@@ -35,3 +35,5 @@ struct entry
 };
 
 extern struct entry symtable[];
+
+extern char* currentFile;

@@ -38,4 +38,4 @@ void emitPushLocal(int offset);
 void emitPushArgument(int offset);
 void emitPushTemp(int offset);
 void emitBootstrap();
-void emitCall(char *functionName);
+void emitCall(char *functionName, char *moduleName, int nArgs);
