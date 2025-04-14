@@ -7,6 +7,96 @@
 
 #define TEMP_BASEADDR 5
 
+void emitPushTemp(int offset)
+{
+  // push the nth temp to the stack
+
+  // addr = that + n
+  int addr = TEMP_BASEADDR + offset;
+
+  // *SP = addr*
+  printf("@%d\n", addr);
+  printf("D=M\n"); // D gets addr*
+  emitPushD();
+}
+
+void emitPushBasic(char *segment, int offset)
+{
+  // put the nth local on the stack
+
+  // addr = local + n
+  printf("@%d\n", offset);
+  printf("D=A\n");
+  printf("@%s\n", segment);
+  printf("D=D+M\n");
+
+  // dereference local + n into D
+  printf("A=D\n");
+  printf("D=M\n");
+
+  emitPushD();
+}
+
+void emitPushThis(int offset)
+{
+  emitPushBasic("THIS", offset);
+}
+
+void emitPushThat(int offset)
+{
+  emitPushBasic("THAT", offset);
+}
+
+void emitPushLocal(int offset)
+{
+  emitPushBasic("LCL", offset);
+}
+
+void emitPushArgument(int offset)
+{
+  emitPushBasic("ARG", offset);
+}
+
+void emitPushConstant(int value)
+{
+  // *SP = i
+  printf("@%d\n", value);
+  printf("D=A\n");
+
+  emitPushD();
+}
+
+void emitPushPointer(int type)
+{
+  if (type == 0)
+  {
+    // we want to take the actual value of @THIS
+    // and push it to the stack
+    printf("@THIS\n");
+    printf("D=M\n");
+    emitPushD();
+  }
+  else if (type == 1)
+  {
+    printf("@THAT\n");
+    printf("D=M\n");
+    emitPushD();
+  }
+  else
+  {
+    error("tried to pop pointer with a value other than 0/1\n");
+  }
+}
+
+void emitPushStatic(int n)
+{
+  // this needs to use the filename dynamically
+  printf("@sample.%d\n", n);
+  printf("D=M\n");
+
+  emitPushD();
+}
+
 void emitPopTemp(int offset)
 {
   // addr = temp + n

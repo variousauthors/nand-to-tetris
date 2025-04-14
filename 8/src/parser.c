@@ -158,6 +158,7 @@ bool statement(Buffer *buffer, IR *ir)
     // emit goto functionName
     // emit return label
 
+    error("call is unimplemented");
     return match(buffer, TK_NUMBER);
   }
   case TK_IF_GOTO: {
@@ -263,11 +264,7 @@ bool push(Buffer *buffer)
   {
     match(buffer, TK_STATIC);
 
-    // this needs to use the filename dynamically
-    printf("@sample.%d\n", tokenval);
-    printf("D=M\n");
-
-    emitPushD();
+    emitPushStatic(tokenval);
 
     return match(buffer, TK_NUMBER);
   }
@@ -275,24 +272,7 @@ bool push(Buffer *buffer)
   {
     match(buffer, TK_POINTER);
 
-    if (tokenval == 0)
-    {
-      // we want to take the actual value of @THIS
-      // and push it to the stack
-      printf("@THIS\n");
-      printf("D=M\n");
-      emitPushD();
-    }
-    else if (tokenval == 1)
-    {
-      printf("@THAT\n");
-      printf("D=M\n");
-      emitPushD();
-    }
-    else
-    {
-      return error("tried to pop pointer with a value other than 0/1\n");
-    }
+    emitPushPointer(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -301,11 +281,7 @@ bool push(Buffer *buffer)
   {
     match(buffer, TK_CONSTANT);
 
-    // *SP = i
-    printf("@%d\n", tokenval);
-    printf("D=A\n");
-
-    emitPushD();
+    emitPushConstant(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -314,19 +290,7 @@ bool push(Buffer *buffer)
   {
     match(buffer, TK_LOCAL);
 
-    // put the nth local on the stack
-
-    // addr = local + n
-    printf("@%d\n", tokenval);
-    printf("D=A\n");
-    printf("@LCL\n");
-    printf("D=D+M\n");
-
-    // dereference local + n into D
-    printf("A=D\n");
-    printf("D=M\n");
-
-    emitPushD();
+    emitPushLocal(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -335,19 +299,7 @@ bool push(Buffer *buffer)
   {
     match(buffer, TK_ARGUMENT);
 
-    // put the nth argument on the stack
-
-    // addr = argument + n
-    printf("@%d\n", tokenval);
-    printf("D=A\n");
-    printf("@ARG\n");
-    printf("D=D+M\n");
-
-    // dereference arg + n into D
-    printf("A=D\n");
-    printf("D=M\n");
-
-    emitPushD();
+    emitPushArgument(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -356,19 +308,7 @@ bool push(Buffer *buffer)
   {
     match(buffer, TK_THIS);
 
-    // put the nth this on the stack
-
-    // addr = this + n
-    printf("@%d\n", tokenval);
-    printf("D=A\n");
-    printf("@THIS\n");
-    printf("D=D+M\n");
-
-    // dereference this + n into D
-    printf("A=D\n");
-    printf("D=M\n");
-
-    emitPushD();
+    emitPushThis(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -376,19 +316,8 @@ bool push(Buffer *buffer)
   case TK_THAT:
   {
     match(buffer, TK_THAT);
-    // put the nth that on the stack
 
-    // addr = that + n
-    printf("@%d\n", tokenval);
-    printf("D=A\n");
-    printf("@THAT\n");
-    printf("D=D+M\n");
-
-    // dereference local + n into D
-    printf("A=D\n");
-    printf("D=M\n");
-
-    emitPushD();
+    emitPushThat(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -396,15 +325,9 @@ bool push(Buffer *buffer)
   case TK_TEMP:
   {
     match(buffer, TK_TEMP);
-    // push the nth temp to the stack
 
-    // addr = that + n
-    int addr = TEMP_BASEADDR + tokenval;
+    emitPushTemp(tokenval);
 
-    // *SP = addr*
-    printf("@%d\n", addr);
-    printf("D=M\n"); // D gets addr*
-    emitPushD();
     match(buffer, TK_NUMBER);
     return true;
   }
