@@ -37,3 +37,5 @@ void emitPushThat(int offset);
 void emitPushLocal(int offset);
 void emitPushArgument(int offset);
 void emitPushTemp(int offset);
+void emitBootstrap();
+void emitCall(char *functionName);

@@ -7,6 +7,22 @@
 
 #define TEMP_BASEADDR 5
 
+void emitBootstrap()
+{
+  printf("@256\n");
+  printf("D=A\n");
+  printf("@SP\n");
+  printf("A=M\n");
+  printf("M=D\n"); // SP = 256
+
+  emitCall("Sys.init");
+}
+
+void emitCall(char *functionName) {
+
+  error("emitCall unimplemented");
+}
+
 void emitPushTemp(int offset)
 {
   // push the nth temp to the stack

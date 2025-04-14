@@ -5,6 +5,7 @@
 
 #include "parser.h"
 #include "init.h"
+#include "emitter.h"
 #include <sys/syslimits.h>
 
 bool isVMFile(char *name, int namelen)
@@ -53,13 +54,7 @@ int main(int argc, char *argv[])
   else if (S_ISDIR(path_stat.st_mode))
   {
     // we'll output the bootstrap code
-    printf("@256\n");
-    printf("D=A\n");
-    printf("@SP\n");
-    printf("A=M\n");
-    printf("M=D\n"); // SP = 256
-
-    printf("");
+    emitBootstrap();
 
     // then parse each file
     DIR *dir = opendir(path);
