@@ -10,15 +10,6 @@
 int parse(FILE *infile);
 
 bool statement(Buffer *buffer, IR *ir);
-bool add(Buffer *buffer);
-bool sub(Buffer *buffer);
-bool neg(Buffer *buffer);
-bool eq(Buffer *buffer);
-bool gt(Buffer *buffer);
-bool lt(Buffer *buffer);
-bool logicalAnd(Buffer *buffer);
-bool logicalOr(Buffer *buffer);
-bool logicalNot(Buffer *buffer);
 bool pop(Buffer *buffer);
 bool push(Buffer *buffer);
 

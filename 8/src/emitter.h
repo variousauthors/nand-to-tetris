@@ -1,0 +1,31 @@
+
+/** register D will get the value baseaddr + offset for the given segment */
+void emitAGetsBasePlusOffset(char *segment, int offset);
+void emitDGetsBasePlusOffset(char *segment, int offset);
+void emitGetDFromStack();
+void emitWriteDToStack();
+void emitDecrementSP();
+void emitIncrementSP();
+void emitPushD();
+void emitPopIntoD();
+bool emitAdd();
+bool emitSub();
+bool emitNeg();
+bool emitEq();
+bool emitGt();
+bool emitLt();
+bool emitLogicalAnd();
+bool emitLogicalOr();
+bool emitLogicalNot();
+void emitLabel(char *label);
+void emitInitLocal(int i);
+void emitReturn();
+void emitIfGoto(char * label);
+void emitGoto(char *label);
+void emitPopStatic(int n);
+void emitPopLocal(int offset);
+void emitPopArgument(int offset);
+void emitPopThis(int offset);
+void emitPopPointer(int type);
+void emitPopThat(int offset);
+void emitPopTemp(int offset);

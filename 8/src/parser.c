@@ -9,6 +9,7 @@
 #include "tokenizer.h"
 #include "parser.h"
 #include "global.h"
+#include "emitter.h"
 
 Token lookahead;
 int currentAddress = 0;
@@ -36,7 +37,6 @@ int parse(FILE *file)
 
   emit(&ir);
 
-  fclose(file);
   return 0;
 }
 
@@ -55,110 +55,54 @@ bool match(Buffer *buffer, Token t)
   return false;
 }
 
-/** register D will get the value baseaddr + offset for the given segment */
-void emitAGetsBasePlusOffset(char *segment, int offset)
-{
-  printf("@%d\n", offset); // eg @7 if n = 7
-  printf("D=A\n");
-  printf("@%s\n", segment); // eg @LCL if seg = LCL
-  printf("A=D+M\n");
-}
-
-/** register D will get the value baseaddr + offset for the given segment */
-void emitDGetsBasePlusOffset(char *segment, int offset)
-{
-  printf("@%d\n", offset); // eg @7 if n = 7
-  printf("D=A\n");
-  printf("@%s\n", segment); // eg @LCL if seg = LCL
-  printf("D=D+M\n");
-}
-
-void emitGetDFromStack()
-{
-  printf("@SP\n");
-  printf("A=M\n");
-  printf("D=M\n");
-}
-
-void emitWriteDToStack()
-{
-  printf("@SP\n");
-  printf("A=M\n");
-  printf("M=D\n");
-}
-
-void emitDecrementSP()
-{
-  printf("@SP\n");
-  printf("M=M-1\n");
-}
-
-void emitIncrementSP()
-{
-  printf("@SP\n");
-  printf("M=M+1\n");
-}
-
-void emitPushD()
-{
-  emitWriteDToStack();
-  emitIncrementSP();
-}
-
-void emitPopIntoD()
-{
-  emitDecrementSP();
-  emitGetDFromStack();
-}
-
 bool statement(Buffer *buffer, IR *ir)
 {
   switch (lookahead)
   {
   case TK_ADD:
   {
-    match(buffer, TK_ADD);
-    return add(buffer);
+    emitAdd();
+    return match(buffer, TK_ADD);
   }
   case TK_SUB:
   {
-    match(buffer, TK_SUB);
-    return sub(buffer);
+    emitSub();
+    return match(buffer, TK_SUB);
   }
   case TK_AND:
   {
-    match(buffer, TK_AND);
-    return logicalAnd(buffer);
+    emitLogicalAnd();
+    return match(buffer, TK_AND);
   }
   case TK_EQ:
   {
-    match(buffer, TK_EQ);
-    return eq(buffer);
+    emitEq();
+    return match(buffer, TK_EQ);
   }
   case TK_GT:
   {
-    match(buffer, TK_GT);
-    return gt(buffer);
+    emitGt();
+    return match(buffer, TK_GT);
   }
   case TK_LT:
   {
-    match(buffer, TK_LT);
-    return lt(buffer);
+    emitLt();
+    return match(buffer, TK_LT);
   }
   case TK_NEG:
   {
-    match(buffer, TK_NEG);
-    return neg(buffer);
+    emitNeg();
+    return match(buffer, TK_NEG);
   }
   case TK_NOT:
   {
-    match(buffer, TK_NOT);
-    return logicalNot(buffer);
+    emitLogicalNot();
+    return match(buffer, TK_NOT);
   }
   case TK_OR:
   {
-    match(buffer, TK_OR);
-    return logicalOr(buffer);
+    emitLogicalOr();
+    return match(buffer, TK_OR);
   }
   case TK_POP:
   {
@@ -173,8 +117,7 @@ bool statement(Buffer *buffer, IR *ir)
   case TK_LABEL: {
     match(buffer, TK_LABEL);
 
-    // emit a label into the asm
-    printf("(%s)\n", symtable[tokenval].lexptr);
+    emitLabel(symtable[tokenval].lexptr);
 
     return match(buffer, TK_IDENTIFIER);
   }
@@ -182,14 +125,13 @@ bool statement(Buffer *buffer, IR *ir)
     match(buffer, TK_FUNCTION);
 
     // must emit a label that is the "function address"
-    printf("(%s)\n", symtable[tokenval].lexptr);
+    emitLabel(symtable[tokenval].lexptr);
 
     match(buffer, TK_IDENTIFIER);
 
     // initialize the local variables, first tokenval entries in LCL
     for (int i = 0; i < tokenval; i++) {
-      emitAGetsBasePlusOffset("LCL", i);
-      printf("M=0\n");
+      emitInitLocal(i);
     }
 
     return match(buffer, TK_NUMBER);
@@ -197,69 +139,7 @@ bool statement(Buffer *buffer, IR *ir)
   case TK_RETURN: {
     match(buffer, TK_RETURN);
 
-    // value at the top of the stack is the return value
-    // *ARG = pop
-    emitPopIntoD();
-    printf("@ARG\n");
-    printf("A=M\n");
-    printf("M=D\n"); // *ARG = pop
-
-    // SP = ARG + 1
-    printf("@ARG\n");
-    printf("D=M+1\n");
-    printf("@SP\n");
-    printf("M=D\n"); // SP = ARG + 1
-
-    // restore caller context
-
-    // endFrame = LCL
-    // returnAdd = *(LCL - 5)
-
-    printf("@LCL\n");
-    printf("D=M\n");
-    printf("@R13\n");
-    printf("M=D-1\n"); // R13 := endFrame - 1
-
-    // THAT
-    printf("A=M\n");
-    printf("D=M\n"); // dereference endFrame
-    printf("@THAT\n");
-    printf("M=D\n"); // THAT = *(endframe - 1)
-
-    // THIS
-    printf("@R13\n");
-    printf("M=M-1\n"); // R13 := endFrame - 2
-
-    printf("A=M\n");
-    printf("D=M\n"); // dereference endFrame
-    printf("@THIS\n");
-    printf("M=D\n"); // THIS = *(endframe - 2)
-
-    // ARG
-    printf("@R13\n");
-    printf("M=M-1\n"); // R13 := endFrame - 3
-
-    printf("A=M\n");
-    printf("D=M\n"); // dereference endFrame
-    printf("@ARG\n");
-    printf("M=D\n"); // ARG = *(endframe - 3)
-
-    // LCL
-    printf("@R13\n");
-    printf("M=M-1\n"); // R13 := endFrame - 4
-
-    printf("A=M\n");
-    printf("D=M\n"); // dereference endFrame
-    printf("@LCL\n");
-    printf("M=D\n"); // LCL = *(endframe - 4)
-
-    // finally GOTO retAddr
-    printf("@R13\n");
-    printf("M=M-1\n"); // R13 := endFrame - 5
-
-    printf("A=M\n");
-    printf("D=M\n"); // dereference endFrame
-    printf("D;JMP\n"); // goto *(endFrame - 5)
+    emitReturn();
 
     return true;
   }
@@ -283,21 +163,14 @@ bool statement(Buffer *buffer, IR *ir)
   case TK_IF_GOTO: {
     match(buffer, TK_IF_GOTO);
 
-    // consume a value from the stack
-    // do a jump if that is gt zero
-    emitPopIntoD();
-    printf("@%s\n", symtable[tokenval].lexptr);
-    printf("D;JGT\n");
+    emitIfGoto(symtable[tokenval].lexptr);
 
     return match(buffer, TK_IDENTIFIER);
   }
   case TK_GOTO: {
     match(buffer, TK_GOTO);
 
-    // just jump
-
-    printf("@%s\n", symtable[tokenval].lexptr);
-    printf("0;JEQ\n");
+    emitGoto(symtable[tokenval].lexptr);
 
     return match(buffer, TK_IDENTIFIER);
   }
@@ -308,91 +181,6 @@ bool statement(Buffer *buffer, IR *ir)
   return true;
 };
 
-bool add(Buffer *buffer)
-{
-  // get a value from the stack
-  // get another value from the stack
-  // add them, put that back on the stack
-
-  // pop a value
-  emitPopIntoD();
-
-  // store it in R13
-  printf("@R13\n");
-  printf("M=D\n");
-
-  // pop a value into D
-  emitPopIntoD();
-
-  // retrieve R13 and add
-  printf("@R13\n");
-  printf("D=D+M\n");
-
-  emitPushD();
-
-  return true;
-}
-bool sub(Buffer *buffer)
-{
-  // pop a value
-  emitPopIntoD();
-
-  // store it in R13
-  printf("@R13\n");
-  printf("M=D\n");
-
-  emitPopIntoD();
-
-  // retrieve R13 and add
-  printf("@R13\n");
-  printf("D=D-M\n");
-
-  emitPushD();
-
-  return true;
-}
-bool neg(Buffer *buffer)
-{
-  error("neg\n");
-  return true;
-}
-bool eq(Buffer *buffer)
-{
-  error("eq\n");
-  return true;
-}
-bool gt(Buffer *buffer)
-{
-  error("gt\n");
-  return true;
-}
-bool lt(Buffer *buffer)
-{
-  error("lt\n");
-  return true;
-}
-bool logicalAnd(Buffer *buffer)
-{
-  error("logicalAnd\n");
-  return true;
-}
-bool logicalOr(Buffer *buffer)
-{
-  error("logicalOr\n");
-  return true;
-}
-bool logicalNot(Buffer *buffer)
-{
-  emitPopIntoD();
-
-  // apply logical not
-  printf("D=!D\n");
-
-  emitPushD();
-
-  return true;
-}
-
 bool pop(Buffer *buffer)
 {
   switch (lookahead)
@@ -401,11 +189,7 @@ bool pop(Buffer *buffer)
   {
     match(buffer, TK_STATIC);
 
-    // this needs to use the filename dynamically
-    emitPopIntoD();
-
-    printf("@sample.%d\n", tokenval);
-    printf("M=D\n");
+    emitPopStatic(tokenval);
 
     return match(buffer, TK_NUMBER);
   }
@@ -413,23 +197,7 @@ bool pop(Buffer *buffer)
   {
     match(buffer, TK_POINTER);
 
-    if (tokenval == 0)
-    {
-      // we want to set THIS to the value we pop, not dereference it
-      emitPopIntoD();
-      printf("@THIS\n");
-      printf("M=D\n");
-    }
-    else if (tokenval == 1)
-    {
-      emitPopIntoD();
-      printf("@THAT\n");
-      printf("M=D\n");
-    }
-    else
-    {
-      return error("tried to pop pointer with a value other than 0/1\n");
-    }
+    emitPopPointer(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -438,17 +206,7 @@ bool pop(Buffer *buffer)
   {
     match(buffer, TK_LOCAL);
 
-    // addr = local + n
-    emitDGetsBasePlusOffset("LCL", tokenval);
-
-    printf("@R15\n"); // R13, R14, and R15 are our scratch registers
-    printf("M=D\n");
-
-    emitPopIntoD();
-
-    printf("@R15\n");
-    printf("A=M\n"); // jump to the addr
-    printf("M=D\n"); // store at addr
+    emitPopLocal(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -457,19 +215,7 @@ bool pop(Buffer *buffer)
   {
     match(buffer, TK_ARGUMENT);
 
-    // pop the stack into argument n
-
-    // addr = local + n
-    emitDGetsBasePlusOffset("ARG", tokenval);
-
-    printf("@R15\n"); // R13, R14, and R15 are our scratch registers
-    printf("M=D\n");
-
-    emitPopIntoD();
-
-    printf("@R15\n");
-    printf("A=M\n"); // jump to the addr
-    printf("M=D\n"); // store at addr
+    emitPopArgument(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -478,19 +224,7 @@ bool pop(Buffer *buffer)
   {
     match(buffer, TK_THIS);
 
-    // pop this n
-
-    // addr = this + n
-    emitDGetsBasePlusOffset("THIS", tokenval);
-
-    printf("@R15\n"); // R13, R14, and R15 are our scratch registers
-    printf("M=D\n");
-
-    emitPopIntoD();
-
-    printf("@R15\n");
-    printf("A=M\n"); // jump to the addr
-    printf("M=D\n"); // store at addr
+    emitPopThis(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -500,17 +234,7 @@ bool pop(Buffer *buffer)
     match(buffer, TK_THAT);
     // pop stack into that n
 
-    // addr = that + n
-    emitDGetsBasePlusOffset("THAT", tokenval);
-
-    printf("@R15\n"); // R13, R14, and R15 are our scratch registers
-    printf("M=D\n");
-
-    emitPopIntoD();
-
-    printf("@R15\n");
-    printf("A=M\n"); // jump to the addr
-    printf("M=D\n"); // store at addr
+    emitPopThat(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
@@ -519,13 +243,7 @@ bool pop(Buffer *buffer)
   {
     match(buffer, TK_TEMP);
 
-    // addr = temp + n
-    int addr = TEMP_BASEADDR + tokenval;
-
-    emitPopIntoD();
-
-    printf("@%d\n", addr); // constant address
-    printf("M=D\n");       // store at addr
+    emitPopTemp(tokenval);
 
     match(buffer, TK_NUMBER);
     return true;
