@@ -26,6 +26,7 @@ struct entry keywords[] = {
     "label", TK_LABEL, 0,
     "if-goto", TK_IF_GOTO, 0,
     "goto", TK_GOTO, 0,
+    "function", TK_FUNCTION, 0,
     0, 0};
 
 void init()

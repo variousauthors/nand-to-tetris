@@ -55,6 +55,24 @@ bool match(Buffer *buffer, Token t)
   return false;
 }
 
+/** register D will get the value baseaddr + offset for the given segment */
+void emitAGetsBasePlusOffset(char *segment, int offset)
+{
+  printf("@%d\n", offset); // eg @7 if n = 7
+  printf("D=A\n");
+  printf("@%s\n", segment); // eg @LCL if seg = LCL
+  printf("A=D+M\n");
+}
+
+/** register D will get the value baseaddr + offset for the given segment */
+void emitDGetsBasePlusOffset(char *segment, int offset)
+{
+  printf("@%d\n", offset); // eg @7 if n = 7
+  printf("D=A\n");
+  printf("@%s\n", segment); // eg @LCL if seg = LCL
+  printf("D=D+M\n");
+}
+
 void emitGetDFromStack()
 {
   printf("@SP\n");
@@ -159,6 +177,62 @@ bool statement(Buffer *buffer, IR *ir)
     printf("(%s)\n", symtable[tokenval].lexptr);
 
     return match(buffer, TK_IDENTIFIER);
+  }
+  case TK_FUNCTION: {
+    match(buffer, TK_FUNCTION);
+
+    // must emit a label that is the "function address"
+    printf("(%s)\n", symtable[tokenval].lexptr);
+
+    match(buffer, TK_IDENTIFIER);
+
+    // initialize the local variables, first tokenval entries in LCL
+    for (int i = 0; i < tokenval; i++) {
+      emitAGetsBasePlusOffset("LCL", i);
+      printf("M=0\n");
+    }
+
+    return match(buffer, TK_NUMBER);
+  }
+  case TK_RETURN: {
+    match(buffer, TK_RETURN);
+
+    // the return address is guaranteed to be on the stack
+    // endFrame = LCL
+    // returnAdd = *(LCL - 5)
+
+    // value at the top of the stack is the return value
+    // put that into ARG 0
+    // *ARG = pop
+    // SP = ARG + 1
+
+    // restore context
+    // THAT = *(endframe - 1)
+    // THIS = *(endframe - 2)
+    // ARG = *(endframe - 3)
+    // LCL = *(endframe - 4)
+
+    // finally GOTO retAddr
+
+
+    return true;
+  }
+  case TK_CALL: {
+    match(buffer, TK_CALL);
+
+    char *id = symtable[tokenval].lexptr;
+
+    match(buffer, TK_IDENTIFIER);
+
+    // generate and push return address Xxx$ret.1
+    // push caller's stack frame
+    // LCL, ARG, THIS, THAT
+    // ARG = SPI - 5 - nArgs (tokenval)
+    // LCL = SP
+    // emit goto functionName
+    // emit return label
+
+    return match(buffer, TK_NUMBER);
   }
   case TK_IF_GOTO: {
     match(buffer, TK_IF_GOTO);
@@ -265,15 +339,6 @@ bool logicalNot(Buffer *buffer)
 {
   error("logicalNot\n");
   return true;
-}
-
-/** register D will get the value baseaddr + offset for the given segment */
-void emitDGetsBasePlusOffset(char *segment, int offset)
-{
-  printf("@%d\n", offset); // eg @7 if n = 7
-  printf("D=A\n");
-  printf("@%s\n", segment); // eg @LCL if seg = LCL
-  printf("D=D+M\n");
 }
 
 bool pop(Buffer *buffer)
