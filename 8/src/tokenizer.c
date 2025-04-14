@@ -11,7 +11,7 @@ char identifierBuffer[BSIZE];
 
 bool isIdPart(char c)
 {
-  return isalnum(c);
+  return isalnum(c) || c == '-' || c == '$' || c == '.';
 }
 
 Token nextToken(Buffer *buffer)
@@ -22,7 +22,7 @@ Token nextToken(Buffer *buffer)
 
   while ((c = nextchar(buffer)) != EOF)
   {
-    //printf("considering %c\n", c);
+    // printf("line %d: considering %c\n", lineno, c);
 
     switch (c)
     {
@@ -34,6 +34,10 @@ Token nextToken(Buffer *buffer)
       commit(buffer);
       break;
     case '\r':
+    {
+      commit(buffer);
+      break;
+    }
     case '\n':
     {
       lineno++;
@@ -123,8 +127,7 @@ Token nextToken(Buffer *buffer)
 
       if (p == 0)
       {
-        printf("unknown identifier: |%s|\n", identifierBuffer);
-        error("encountered unknown char");
+        p = insert(identifierBuffer, TK_IDENTIFIER, -1);
       }
 
       tokenval = p;

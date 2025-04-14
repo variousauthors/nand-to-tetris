@@ -55,6 +55,44 @@ bool match(Buffer *buffer, Token t)
   return false;
 }
 
+void emitGetDFromStack()
+{
+  printf("@SP\n");
+  printf("A=M\n");
+  printf("D=M\n");
+}
+
+void emitWriteDToStack()
+{
+  printf("@SP\n");
+  printf("A=M\n");
+  printf("M=D\n");
+}
+
+void emitDecrementSP()
+{
+  printf("@SP\n");
+  printf("M=M-1\n");
+}
+
+void emitIncrementSP()
+{
+  printf("@SP\n");
+  printf("M=M+1\n");
+}
+
+void emitPushD()
+{
+  emitWriteDToStack();
+  emitIncrementSP();
+}
+
+void emitPopIntoD()
+{
+  emitDecrementSP();
+  emitGetDFromStack();
+}
+
 bool statement(Buffer *buffer, IR *ir)
 {
   switch (lookahead)
@@ -114,50 +152,31 @@ bool statement(Buffer *buffer, IR *ir)
     match(buffer, TK_PUSH);
     return push(buffer);
   }
+  case TK_LABEL: {
+    match(buffer, TK_LABEL);
+
+    // emit a label into the asm
+    printf("(%s)\n", symtable[tokenval].lexptr);
+
+    return match(buffer, TK_IDENTIFIER);
+  }
+  case TK_IF_GOTO: {
+    match(buffer, TK_IF_GOTO);
+
+    // consume a value from the stack
+    // do a jump if that is gt zero
+    emitPopIntoD();
+    printf("@%s\n", symtable[tokenval].lexptr);
+    printf("D;JGT\n");
+
+    return match(buffer, TK_IDENTIFIER);
+  }
   default:
-    break;
+    error("encountered unexpected token");
   }
 
   return true;
 };
-
-void emitGetDFromStack()
-{
-  printf("@SP\n");
-  printf("A=M\n");
-  printf("D=M\n");
-}
-
-void emitWriteDToStack()
-{
-  printf("@SP\n");
-  printf("A=M\n");
-  printf("M=D\n");
-}
-
-void emitDecrementSP()
-{
-  printf("@SP\n");
-  printf("M=M-1\n");
-}
-
-void emitIncrementSP()
-{
-  printf("@SP\n");
-  printf("M=M+1\n");
-}
-
-void emitPushD()
-{
-  emitWriteDToStack();
-  emitIncrementSP();
-}
-
-void emitPopIntoD()
-{
-  emitDecrementSP();
-  emitGetDFromStack();
-}
 
 bool add(Buffer *buffer)
 {

@@ -23,6 +23,8 @@ struct entry keywords[] = {
     "argument", TK_ARGUMENT, 0,
     "temp", TK_TEMP, 0,
     "pointer", TK_POINTER, 0,
+    "label", TK_LABEL, 0,
+    "if-goto", TK_IF_GOTO, 0,
     0, 0};
 
 void init()
