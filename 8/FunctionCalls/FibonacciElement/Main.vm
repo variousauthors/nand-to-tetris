@@ -8,6 +8,7 @@
 // n is given in argument[0]. Called by the Sys.init function 
 // (part of the Sys.vm file), which sets argument[0] to an input
 // value and then calls Main.fibonacci.
+// 0, 1, 1, 2, 3
 function Main.fibonacci 0
 	push argument 0
 	push constant 2

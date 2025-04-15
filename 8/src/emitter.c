@@ -10,7 +10,7 @@
 
 #define TEMP_BASEADDR 5
 
-int ret = 0;
+int labelId = 0;
 
 void emitBootstrap()
 {
@@ -20,19 +20,21 @@ void emitBootstrap()
   printf("A=M\n");
   printf("M=D\n"); // SP = 256
 
-  emitGoto("Sys.init");
+  emitCall("Sys.init", "Bootstrap", 0);
+  //emitGoto("Sys.init");
   // emitCall("Sys.init", currentFile, 1);
 }
 
 void emitCall(char *functionName, char *moduleName, int nArgs)
 {
-  emitGoto(functionName);
-
-  // generate and push return address Xxx$ret.1
+  // generate the label
   char retLabel[PATH_MAX];
-  snprintf(retLabel, sizeof(retLabel), "%s%s.%d", moduleName, "$ret", ret++);
+  snprintf(retLabel, sizeof(retLabel), "%s%s.%d", moduleName, "$ret", labelId++);
 
-  printf("(%s)\n", retLabel);
+  // push the label (return address) to the stack
+  printf("@%s\n", retLabel);
+  printf("D=A\n");
+  emitPushD();
 
   // push caller's stack frame
   // LCL, ARG, THIS, THAT
@@ -65,6 +67,10 @@ void emitCall(char *functionName, char *moduleName, int nArgs)
   printf("D=M\n");
   printf("@LCL\n");
   printf("M=D\n");
+
+  emitGoto(functionName);
+
+  printf("(%s)\n", retLabel);
 }
 
 void emitPushTemp(int offset)
@@ -309,6 +315,7 @@ void emitReturn()
   printf("M=M-1\n"); // R13 := endFrame - 5
 
   printf("A=M\n");
+  printf("A=M\n");
   printf("0;JMP\n"); // goto *(endFrame - 5)
 }
 
@@ -439,13 +446,28 @@ bool emitGt()
 }
 bool emitLt()
 {
-  // pop a, pop b
-  // push a < b
-  //
-  // a < b => (a - b) < 0
-  emitSub(); // pushes a - b
+  char doneLabel[PATH_MAX];
+  char ltLabel[PATH_MAX];
+  snprintf(ltLabel, sizeof(ltLabel), "%s%s.%d", currentFile, "$lt_true", labelId++);
+  snprintf(doneLabel, sizeof(doneLabel), "%s%s.%d", currentFile, "$lt_done", labelId++);
+
+  emitSub(); // (a < b) => (a - b) < 0
   emitPopIntoD();
+  printf("@%s\n", ltLabel);
   printf("D;JLT\n");
+
+  printf("@0\n");
+  printf("D=A\n");
+  emitPushD();
+  printf("@%s\n", doneLabel);
+  printf("0;JMP\n");
+
+  emitLabel(ltLabel);
+  printf("@1\n");
+  printf("D=A\n");
+  emitPushD();
+
+  emitLabel(doneLabel);
 
   return true;
 }
