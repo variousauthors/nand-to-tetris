@@ -31,15 +31,6 @@ void emitCall(char *functionName, char *moduleName, int nArgs)
   char retLabel[PATH_MAX];
   snprintf(retLabel, sizeof(retLabel), "%s%s.%d", moduleName, "$ret", labelId++);
 
-  if (nArgs == 0) {
-    // we need to reserve space for the return value
-    printf("@0\n");
-    printf("D=A\n");
-    emitPushD();
-  }
-
-  int offset = nArgs == 0 ? 1 : nArgs;
-
   // push the label (return address) to the stack
   printf("@%s\n", retLabel);
   printf("D=A\n");
@@ -64,10 +55,10 @@ void emitCall(char *functionName, char *moduleName, int nArgs)
   emitPushD();
 
   // ARG = SP - 5 - nArgs (tokenval)
-  printf("@%d\n", 5 + offset); // offset nArgs is always at least 1
+  printf("@%d\n", 5 + nArgs);
   printf("D=A\n");
   printf("@SP\n");
-  printf("D=M-D\n"); // SP - 5
+  printf("D=M-D\n"); // SP - (5 + nArgs)
   printf("@ARG\n");
   printf("M=D\n"); // ARG = SP - 5 - nArgs
 
@@ -264,6 +255,22 @@ void emitIfGoto(char *label)
 void emitReturn()
 {
 
+  // store endFrame
+  printf("@LCL\n");
+  printf("D=M\n");
+  printf("@R13\n");
+  printf("M=D\n");
+
+  // store ret addr
+  printf("@5\n"); // offset from endFrame
+  printf("D=A\n");
+  printf("@R13\n");
+  printf("A=M\n"); // get endFrame from R13
+  printf("A=A-D\n"); // endframe - 5
+  printf("D=M\n"); // ret addr
+  printf("@R14\n");
+  printf("M=D\n"); // R14 = *(endFrame - 5)
+
   // value at the top of the stack is the return value
   // *ARG = pop
   emitPopIntoD();
@@ -277,17 +284,10 @@ void emitReturn()
   printf("@SP\n");
   printf("M=D\n"); // SP = ARG + 1
 
-  // restore caller context
-
-  // endFrame = LCL
-  // returnAdd = *(LCL - 5)
-
-  printf("@LCL\n");
-  printf("D=M\n");
-  printf("@R13\n");
-  printf("M=D-1\n"); // R13 := endFrame - 1
-
   // THAT
+  printf("@R13\n");
+  printf("M=M-1\n"); // R13 := endFrame - 1
+
   printf("A=M\n");
   printf("D=M\n"); // dereference endFrame
   printf("@THAT\n");
@@ -321,10 +321,7 @@ void emitReturn()
   printf("M=D\n"); // LCL = *(endframe - 4)
 
   // finally GOTO retAddr
-  printf("@R13\n");
-  printf("M=M-1\n"); // R13 := endFrame - 5
-
-  printf("A=M\n");
+  printf("@R14\n");
   printf("A=M\n");
   printf("0;JMP\n"); // goto *(endFrame - 5)
 }
