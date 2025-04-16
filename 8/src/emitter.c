@@ -31,6 +31,15 @@ void emitCall(char *functionName, char *moduleName, int nArgs)
   char retLabel[PATH_MAX];
   snprintf(retLabel, sizeof(retLabel), "%s%s.%d", moduleName, "$ret", labelId++);
 
+  if (nArgs == 0) {
+    // we need to reserve space for the return value
+    printf("@0\n");
+    printf("D=A\n");
+    emitPushD();
+  }
+
+  int offset = nArgs == 0 ? 1 : nArgs;
+
   // push the label (return address) to the stack
   printf("@%s\n", retLabel);
   printf("D=A\n");
@@ -55,7 +64,7 @@ void emitCall(char *functionName, char *moduleName, int nArgs)
   emitPushD();
 
   // ARG = SP - 5 - nArgs (tokenval)
-  printf("@%d\n", 5 + nArgs); // offset
+  printf("@%d\n", 5 + offset); // offset nArgs is always at least 1
   printf("D=A\n");
   printf("@SP\n");
   printf("D=M-D\n"); // SP - 5
@@ -157,7 +166,7 @@ void emitPushPointer(int type)
 void emitPushStatic(int n)
 {
   // this needs to use the filename dynamically
-  printf("@sample.%d\n", n);
+  printf("@%s.%d\n", currentFile, n);
   printf("D=M\n");
 
   emitPushD();
@@ -234,7 +243,7 @@ void emitPopStatic(int n)
   // this needs to use the filename dynamically
   emitPopIntoD();
 
-  printf("@sample.%d\n", n);
+  printf("@%s.%d\n", currentFile, n);
   printf("M=D\n");
 }
 
@@ -254,6 +263,7 @@ void emitIfGoto(char *label)
 
 void emitReturn()
 {
+
   // value at the top of the stack is the return value
   // *ARG = pop
   emitPopIntoD();
