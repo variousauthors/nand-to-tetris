@@ -214,13 +214,13 @@ void emitPopPointer(int type)
   if (type == 0)
   {
     emitPopIntoD();
-    printf("@THAT\n");
+    printf("@THIS\n");
     printf("M=D\n");
   }
   else if (type == 1)
   {
     emitPopIntoD();
-    printf("@THIS\n");
+    printf("@THAT\n");
     printf("M=D\n");
   }
   else
@@ -326,10 +326,12 @@ void emitReturn()
   printf("0;JMP\n"); // goto *(endFrame - 5)
 }
 
-void emitInitLocal(int i)
+// push 0 onto the stack
+void emitInitLocal()
 {
-  emitAGetsBasePlusOffset("LCL", i);
-  printf("M=0\n");
+  printf("@0\n");
+  printf("D=A\n");
+  emitPushD();
 }
 
 void emitLabel(char *label)

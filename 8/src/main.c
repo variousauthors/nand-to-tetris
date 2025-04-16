@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <_stdio.h>
+#include <libgen.h>
 
 #include "parser.h"
 #include "init.h"
@@ -67,6 +68,11 @@ int main(int argc, char *argv[])
 
   if (S_ISREG(path_stat.st_mode))
   {
+    char moduleName[PATH_MAX];
+    getModuleName(basename(path), moduleName, PATH_MAX);
+
+    currentFile = moduleName;
+
     return parseSingleFile(path);
   }
   else if (S_ISDIR(path_stat.st_mode))

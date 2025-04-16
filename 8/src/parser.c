@@ -132,7 +132,7 @@ bool statement(Buffer *buffer, IR *ir)
 
     // initialize the local variables, first tokenval entries in LCL
     for (int i = 0; i < tokenval; i++) {
-      emitInitLocal(i);
+      emitInitLocal();
     }
 
     return match(buffer, TK_NUMBER);

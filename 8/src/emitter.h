@@ -18,7 +18,7 @@ bool emitLogicalAnd();
 bool emitLogicalOr();
 bool emitLogicalNot();
 void emitLabel(char *label);
-void emitInitLocal(int i);
+void emitInitLocal();
 void emitReturn();
 void emitIfGoto(char * label);
 void emitGoto(char *label);
