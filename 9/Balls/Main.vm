@@ -1,0 +1,51 @@
+function Main.main 4
+label Main_0
+    push constant 1
+    neg
+    not
+    if-goto Main_1
+    push constant 16
+    pop local 0
+    push constant 8
+    pop local 1
+    push constant 16384
+    pop local 2
+    push local 1
+    pop local 3
+label Main_2
+    push local 3
+    push local 1
+    push constant 16
+    add
+    lt
+    not
+    if-goto Main_3
+    push local 1
+    push constant 16
+    call Math.multiply 2
+    push constant 32
+    call Math.multiply 2
+    push local 3
+    push constant 32
+    call Math.multiply 2
+    add
+    push local 0
+    add
+    push local 2
+    add
+    push constant 1
+    neg
+    pop temp 0
+    pop pointer 1
+    push temp 0
+    pop that 0
+    push local 3
+    push constant 1
+    add
+    pop local 3
+    goto Main_2
+label Main_3
+    goto Main_0
+label Main_1
+    push constant 0
+    return

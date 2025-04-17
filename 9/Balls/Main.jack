@@ -1,0 +1,34 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+
+/** Hello World program. */
+class Main {
+   function void main() {
+      /* platformer */
+      // screen
+      // height 256
+      // width 512 but divided by 16 = 32 words per row
+      var int playerx, playery;
+      var Array screen;
+      var int i;
+
+      let playerx = 16; // in 0 - 32
+      let playery = 8; // in 0 -16
+      let screen = 16384;
+
+      while (true) {
+        // draw
+
+        let i = playery;
+        while (i < (playery + 16)) {
+          let screen[(playery * 16 * 32) + (i * 32) + playerx] = -1;
+          let i = i + 1;
+        }
+
+        // update 
+      }
+
+      return;
+   }
+}
