@@ -59,7 +59,10 @@ typedef enum
   TK_EOF,
 } Token;
 
+#define MAX_STRING 128
+
 extern int tokenval;
+extern char identifierBuffer[MAX_STRING];
 
 Token nextToken(Buffer *buffer);
 

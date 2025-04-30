@@ -192,7 +192,7 @@ bool aToken(Buffer *buffer)
     return match(buffer, lookahead);
   }
   case TK_STRING: {
-    emitXMLPrimitive("stringConstant", "STRING CONSTANT OMG");
+    emitXMLPrimitive("stringConstant", identifierBuffer);
     return match(buffer, lookahead);
   }
   case TK_INTEGER: {

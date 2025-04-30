@@ -7,7 +7,7 @@
 
 int tokenval;
 int lineno = 1;
-char identifierBuffer[BSIZE];
+char identifierBuffer[MAX_STRING];
 
 bool isIdPart(char c)
 {
@@ -145,18 +145,24 @@ Token nextToken(Buffer *buffer)
       return symtable[p].token;
     }
     case '"': {
-      // string constant can be anything except \n or "
+      int i = 0;
 
-      // we need to store the string constant
-      // but only until we emit it
-      // tokenval is an int though
-      // maybe we need stringval
-
-      // advance past the string
       while ((c = nextchar(buffer)) != '"')
       {
+        if (c == '\n')
+        {
+          error("encountered newline in string");
+        }
+
+        identifierBuffer[i++] = c;
+
         commit(buffer);
       }
+
+      // consume the closing "
+      commit(buffer);
+
+      identifierBuffer[i] = EOS;
 
       return TK_STRING;
     }
@@ -182,7 +188,7 @@ Token nextToken(Buffer *buffer)
     case '~': return TK_TILDE;
 
     default:
-      printf("unknown char: |%c| %d\n", c, c);
+      fprintf(stderr, "unknown char: |%c| %d\n", c, c);
       error("encountered unknown char");
       break;
     }
