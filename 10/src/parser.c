@@ -171,7 +171,9 @@ bool varDec(Buffer *buffer)
 bool expression(Buffer *buffer)
 {
   emitXMLOpenTag("expression");
+  emitXMLOpenTag("term");
   identifier(buffer);
+  emitXMLCloseTag("term");
   emitXMLCloseTag("expression");
 
   return true;
@@ -227,7 +229,28 @@ bool subroutineCall(Buffer *buffer)
   return true;
 }
 
-bool whileStatement(Buffer *buffer) {}
+bool whileStatement(Buffer *buffer) {
+  match(buffer, TK_WHILE);
+
+  emitXMLOpenTag("whileStatement");
+  emitKeyword("while");
+
+  match(buffer, TK_PAREN_L);
+  emitSymbol("(");
+  expression(buffer);
+  match(buffer, TK_PAREN_R);
+  emitSymbol(")");
+
+  match(buffer, TK_BRACE_L);
+  emitSymbol("{");
+  statements(buffer);
+  match(buffer, TK_BRACE_R);
+  emitSymbol("}");
+
+  emitXMLCloseTag("whileStatement");
+
+  return true;
+}
 
 bool doStatement(Buffer *buffer)
 {

@@ -11,10 +11,16 @@
 
 int indent = 0;
 int MAX_INDENT = 128;
+int SPACES = 2;
+
+/** returns a size appropriate for indentation whitespace */
+int indentSize(int indent) {
+  return indent * SPACES + 1;
+}
 
 void makeIndentation (char *indentation) {
   int i = 0;
-  for (; i < indent && i < MAX_INDENT; i++) {
+  for (; i < indent * SPACES && i < MAX_INDENT; i++) {
     indentation[i] = ' ';
   }
 
@@ -23,21 +29,21 @@ void makeIndentation (char *indentation) {
 }
 
 void emitXMLPrimitive(char* tag, char* value) {
-  char indentation[indent + 1];
+  char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s<%s> %s </%s>\n", indentation, tag, value, tag);
 }
 
 void emitXMLPrimitiveInteger(char* tag, int value) {
-  char indentation[indent + 1];
+  char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s<%s> %d </%s>\n", indentation, tag, value, tag);
 }
 
 void emitXMLOpenTag(char* tag) {
-  char indentation[indent + 1];
+  char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s<%s>\n", indentation, tag);
@@ -47,14 +53,14 @@ void emitXMLOpenTag(char* tag) {
 void emitXMLCloseTag(char* tag) {
   indent--;
 
-  char indentation[indent + 1];
+  char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s</%s>\n", indentation, tag);
 }
 
 void emitXMLSelfClosingTag(char* tag) {
-  char indentation[indent + 1];
+  char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s<%s/>\n", indentation, tag);
