@@ -61,14 +61,17 @@ bool match(Buffer *buffer, Token t)
   return false;
 }
 
-bool identifier (Buffer *buffer) {
+bool identifier(Buffer *buffer)
+{
   match(buffer, TK_IDENTIFIER);
   emitIdentifier(identifierBuffer);
   return true;
 }
 
-bool additionalVarName (Buffer *buffer) {
-  if (lookahead != TK_COMMA) {
+bool additionalVarName(Buffer *buffer)
+{
+  if (lookahead != TK_COMMA)
+  {
     return false;
   }
 
@@ -113,8 +116,10 @@ bool type(Buffer *buffer)
   }
 }
 
-bool voidType (Buffer *buffer) {
-  if (lookahead == TK_VOID) {
+bool voidType(Buffer *buffer)
+{
+  if (lookahead == TK_VOID)
+  {
     match(buffer, TK_VOID);
     emitKeyword("void");
     return true;
@@ -123,13 +128,15 @@ bool voidType (Buffer *buffer) {
   return type(buffer);
 }
 
-bool parameterList(Buffer *buffer) {
+bool parameterList(Buffer *buffer)
+{
   emitXMLOpenTag("parameterList");
   emitXMLCloseTag("parameterList");
   return true;
 }
 
-bool varDecDetails (Buffer *buffer) {
+bool varDecDetails(Buffer *buffer)
+{
   // type varName (, varName)* ;
   type(buffer);
   identifier(buffer);
@@ -143,8 +150,10 @@ bool varDecDetails (Buffer *buffer) {
   return true;
 }
 
-bool varDec (Buffer *buffer) {
-  if (lookahead != TK_VAR) {
+bool varDec(Buffer *buffer)
+{
+  if (lookahead != TK_VAR)
+  {
     return false;
   }
 
@@ -158,11 +167,64 @@ bool varDec (Buffer *buffer) {
   return true;
 }
 
-bool subroutineBody(Buffer *buffer) {
+bool ifStatement(Buffer *buffer) { }
+bool whileStatement(Buffer *buffer) {}
+bool doStatement(Buffer *buffer) {}
+bool returnStatement(Buffer *buffer) {}
+bool letStatement(Buffer *buffer) {}
+
+bool statement(Buffer *buffer)
+{
+  if (lookahead != TK_IF && lookahead != TK_LET && lookahead != TK_WHILE && lookahead != TK_DO && lookahead != TK_RETURN)
+  {
+    return false;
+  }
+
+  switch (lookahead)
+  {
+  case TK_LET:
+  {
+    return letStatement(buffer);
+  }
+  case TK_IF:
+  {
+    return ifStatement(buffer);
+  }
+  case TK_WHILE:
+  {
+    return whileStatement(buffer);
+  }
+  case TK_DO:
+  {
+    return doStatement(buffer);
+  }
+  case TK_RETURN:
+  {
+    return returnStatement(buffer);
+  }
+  default:
+    fprintf(stderr, "expected let | while | if | do | return but got %d\n", lookahead);
+    error("error while parsing statement");
+    break;
+  }
+
+  return true;
+}
+
+bool subroutineBody(Buffer *buffer)
+{
   match(buffer, TK_BRACE_L);
   emitSubroutineBodyOpen();
-  
-  while(varDec(buffer));
+
+  while (varDec(buffer))
+    ;
+
+  emitXMLOpenTag("statements");
+
+  while (statement(buffer))
+    ;
+
+  emitXMLCloseTag("statements");
 
   match(buffer, TK_BRACE_R);
   emitSubroutineBodyClose();
@@ -171,7 +233,8 @@ bool subroutineBody(Buffer *buffer) {
 
 bool classVarDec(Buffer *buffer)
 {
-  if (lookahead != TK_STATIC && lookahead != TK_FIELD) {
+  if (lookahead != TK_STATIC && lookahead != TK_FIELD)
+  {
     return false;
   }
 
@@ -206,7 +269,8 @@ bool classVarDec(Buffer *buffer)
 
 bool subroutineDec(Buffer *buffer)
 {
-  if (lookahead != TK_FUNCTION && lookahead != TK_CONSTRUCTOR && lookahead != TK_METHOD) {
+  if (lookahead != TK_FUNCTION && lookahead != TK_CONSTRUCTOR && lookahead != TK_METHOD)
+  {
     return false;
   }
 
