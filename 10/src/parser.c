@@ -16,6 +16,7 @@ int currentAddress = 0;
 
 #define TEMP_BASEADDR 5
 
+bool statements(Buffer *buffer);
 bool match(Buffer *buffer, Token t);
 bool aToken(Buffer *buffer);
 bool class(Buffer *buffer);
@@ -167,20 +168,106 @@ bool varDec(Buffer *buffer)
   return true;
 }
 
-bool expression (Buffer *buffer) {
+bool expression(Buffer *buffer)
+{
   emitXMLOpenTag("expression");
-  emitSymbol(";");
+  identifier(buffer);
   emitXMLCloseTag("expression");
 
   return true;
 }
 
-bool ifStatement(Buffer *buffer) { }
+bool expressionList(Buffer *buffer)
+{
+  emitXMLOpenTag("expressionList");
+  emitXMLCloseTag("expressionList");
+  return true;
+}
+
+bool subroutineCall(Buffer *buffer)
+{
+  if (lookahead != TK_IDENTIFIER)
+  {
+    return false;
+  }
+
+  char *id1 = symtable[tokenval].lexptr;
+  match(buffer, TK_IDENTIFIER);
+
+  if (lookahead == TK_DOT)
+  {
+    match(buffer, TK_DOT);
+    // (className | varName) . subroutineName ( expressionList )
+    char *id2 = symtable[tokenval].lexptr;
+
+    emitIdentifier(id1);
+    emitSymbol(".");
+    emitIdentifier(id2);
+    match(buffer, TK_IDENTIFIER);
+  }
+  else if (lookahead == TK_PAREN_L)
+  {
+    // subroutineName ( expressionList )
+    emitIdentifier(id1);
+  }
+  else
+  {
+    error("expected . or ( while parsing subroutine call");
+    return false;
+  }
+
+  match(buffer, TK_PAREN_L);
+  emitSymbol("(");
+  expressionList(buffer);
+  match(buffer, TK_PAREN_R);
+  emitSymbol(")");
+  emitSymbol(";");
+
+  return true;
+}
+
 bool whileStatement(Buffer *buffer) {}
-bool doStatement(Buffer *buffer) {}
+
+bool doStatement(Buffer *buffer)
+{
+  match(buffer, TK_DO);
+
+  emitXMLOpenTag("doStatement");
+  emitKeyword("do");
+  subroutineCall(buffer);
+  emitXMLCloseTag("doStatement");
+
+  return true;
+}
+
 bool returnStatement(Buffer *buffer) {}
 
-bool letStatement(Buffer *buffer) {
+bool ifStatement(Buffer *buffer)
+{
+  match(buffer, TK_IF);
+
+  emitXMLOpenTag("ifStatement");
+  emitKeyword("if");
+
+  match(buffer, TK_PAREN_L);
+  emitSymbol("(");
+  expression(buffer);
+  match(buffer, TK_PAREN_R);
+  emitSymbol(")");
+
+  match(buffer, TK_BRACE_L);
+  emitSymbol("{");
+  statements(buffer);
+  match(buffer, TK_BRACE_R);
+  emitSymbol("}");
+
+  emitXMLCloseTag("ifStatement");
+
+  return true;
+}
+
+bool letStatement(Buffer *buffer)
+{
   match(buffer, TK_LET);
 
   emitXMLOpenTag("letStatement");
@@ -188,7 +275,8 @@ bool letStatement(Buffer *buffer) {
 
   identifier(buffer);
 
-  if (lookahead == TK_BRACKET_L) {
+  if (lookahead == TK_BRACKET_L)
+  {
     // optional array expression
     match(buffer, TK_BRACKET_L);
     emitSymbol("[");
@@ -200,6 +288,8 @@ bool letStatement(Buffer *buffer) {
   match(buffer, TK_EQUAL);
   emitSymbol("=");
   expression(buffer);
+  match(buffer, TK_SEMI);
+  emitSymbol(";");
 
   emitXMLCloseTag("letStatement");
 
@@ -244,6 +334,18 @@ bool statement(Buffer *buffer)
   return true;
 }
 
+bool statements(Buffer *buffer)
+{
+  emitXMLOpenTag("statements");
+
+  while (statement(buffer))
+    ;
+
+  emitXMLCloseTag("statements");
+
+  return true;
+}
+
 bool subroutineBody(Buffer *buffer)
 {
   match(buffer, TK_BRACE_L);
@@ -252,12 +354,7 @@ bool subroutineBody(Buffer *buffer)
   while (varDec(buffer))
     ;
 
-  emitXMLOpenTag("statements");
-
-  while (statement(buffer))
-    ;
-
-  emitXMLCloseTag("statements");
+  statements(buffer);
 
   match(buffer, TK_BRACE_R);
   emitSubroutineBodyClose();
