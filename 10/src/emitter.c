@@ -10,7 +10,7 @@
 #define TEMP_BASEADDR 5
 
 int indent = 0;
-int MAX_INDENT = 0;
+int MAX_INDENT = 128;
 
 void makeIndentation (char *indentation) {
   int i = 0;
@@ -58,4 +58,20 @@ void emitXMLSelfClosingTag(char* tag) {
   makeIndentation(indentation);
 
   printf("%s<%s/>\n", indentation, tag);
+}
+
+void emitClassOpen () {
+  emitXMLOpenTag("class");
+}
+
+void emitClassClose () {
+  emitXMLCloseTag("class");
+}
+
+void emitKeyword(char *keyword) {
+  emitXMLPrimitive("keyword", keyword);
+}
+
+void emitIdentifier(char *identifier) {
+  emitXMLPrimitive("identifier", identifier);
 }

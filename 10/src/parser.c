@@ -18,6 +18,7 @@ int currentAddress = 0;
 
 bool match(Buffer *buffer, Token t);
 bool aToken(Buffer *buffer);
+bool class(Buffer *buffer);
 
 int parse(FILE *file)
 {
@@ -36,12 +37,9 @@ int parse(FILE *file)
   ir.current = 0;
   lineno = 1;
 
-  emitXMLOpenTag("tokens");
-
-  while (lookahead != TK_EOF && aToken(&buffer))
+  while (lookahead != TK_EOF && class(&buffer))
     ;
 
-  emitXMLCloseTag("tokens");
   // emit(&ir);
 
   return 0;
@@ -56,10 +54,145 @@ bool match(Buffer *buffer, Token t)
   }
   else
   {
+    fprintf(stderr, "expected %d, encountered %d\n", t, lookahead);
     error("syntax error");
   }
 
   return false;
+}
+
+bool varName (Buffer *buffer) {
+  match(buffer, TK_IDENTIFIER);
+  emitIdentifier(identifierBuffer);
+  return true;
+}
+
+bool additionalVarName (Buffer *buffer) {
+  if (lookahead != TK_COMMA) {
+    return false;
+  }
+
+  match(buffer, TK_COMMA);
+  return varName(buffer);
+}
+
+bool type(Buffer *buffer)
+{
+  switch (lookahead)
+  {
+  case TK_INT:
+  {
+    match(buffer, TK_INT);
+    emitXMLPrimitive("keyword", "int");
+    return true;
+  }
+  case TK_CHAR:
+  {
+    match(buffer, TK_CHAR);
+    emitXMLPrimitive("keyword", "char");
+    return true;
+  }
+  case TK_BOOLEAN:
+  {
+    match(buffer, TK_BOOLEAN);
+    emitXMLPrimitive("keyword", "boolean");
+    return true;
+  }
+  case TK_IDENTIFIER:
+  {
+    match(buffer, TK_IDENTIFIER);
+    emitIdentifier(identifierBuffer);
+    return true;
+  }
+  default:
+    fprintf(stderr, "expected int | char | boolean | classname but got %d\n", lookahead);
+    error("error while parsing type");
+    return false;
+  }
+}
+
+bool varDecBody(Buffer *buffer)
+{
+  // type varName (, varName)* ;
+  type(buffer);
+  varName(buffer);
+
+  while (additionalVarName(buffer))
+    ;
+
+  match(buffer, TK_SEMI);
+  emitXMLPrimitive("symbol", ";");
+
+  return true;
+}
+
+bool classVarDec(Buffer *buffer)
+{
+  if (lookahead != TK_STATIC && lookahead != TK_FIELD) {
+    return false;
+  }
+
+  emitXMLOpenTag("classVarDec");
+
+  switch (lookahead)
+  {
+  case TK_STATIC:
+  {
+    match(buffer, TK_STATIC);
+    emitXMLPrimitive("keyword", "static");
+    varDecBody(buffer);
+    break;
+  }
+  case TK_FIELD:
+  {
+    match(buffer, TK_FIELD);
+    emitXMLPrimitive("keyword", "field");
+    varDecBody(buffer);
+    break;
+  }
+  default:
+    fprintf(stderr, "expected int | char | boolean | classname but got %d\n", lookahead);
+    error("error while parsing type");
+    return false;
+  }
+
+  emitXMLCloseTag("classVarDec");
+
+  return true;
+}
+
+bool subroutineDec(Buffer *buffer)
+{
+  return false;
+}
+
+bool class(Buffer *buffer)
+{
+  int tempval;
+
+  // class className { classVarDec* subroutineDec* }
+
+  match(buffer, TK_CLASS);
+
+  emitClassOpen();
+  emitKeyword("class");
+
+  tempval = tokenval;
+  match(buffer, TK_IDENTIFIER);
+  emitIdentifier(symtable[tempval].lexptr);
+
+  match(buffer, TK_BRACE_L);
+
+  while (classVarDec(buffer))
+    ;
+  while (subroutineDec(buffer))
+    ;
+
+  match(buffer, TK_BRACE_R);
+
+  emitClassClose();
+
+  return true;
 }
 
 bool aToken(Buffer *buffer)
@@ -191,11 +324,13 @@ bool aToken(Buffer *buffer)
     emitXMLPrimitive("symbol", "~");
     return match(buffer, lookahead);
   }
-  case TK_STRING: {
+  case TK_STRING:
+  {
     emitXMLPrimitive("stringConstant", identifierBuffer);
     return match(buffer, lookahead);
   }
-  case TK_INTEGER: {
+  case TK_INTEGER:
+  {
     emitXMLPrimitiveInteger("integerConstant", tokenval);
     return match(buffer, lookahead);
   }
