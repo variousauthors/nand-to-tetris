@@ -8,3 +8,8 @@ void emitClassOpen ();
 void emitClassClose ();
 void emitKeyword(char *keyword);
 void emitIdentifier(char *identifier);
+void emitSymbol(char *symbol);
+void emitSubroutineBodyOpen ();
+void emitSubroutineBodyClose ();
+void emitVarDecOpen ();
+void emitVarDecClose ();

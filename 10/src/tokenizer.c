@@ -74,6 +74,10 @@ Token nextToken(Buffer *buffer)
             }
           }
 
+          if (c == '\n') {
+            lineno++;
+          }
+
           commit(buffer);
         }
         // put the linebreak back on there
@@ -88,6 +92,7 @@ Token nextToken(Buffer *buffer)
           commit(buffer);
         }
         // put the linebreak back on there
+        lineno++;
         rollback(buffer);
         break;
       }

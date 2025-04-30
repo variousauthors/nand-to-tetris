@@ -60,6 +60,16 @@ void emitXMLSelfClosingTag(char* tag) {
   printf("%s<%s/>\n", indentation, tag);
 }
 
+void emitSubroutineBodyOpen () {
+  emitXMLOpenTag("subroutineBody");
+  emitSymbol("{");
+}
+
+void emitSubroutineBodyClose () {
+  emitXMLCloseTag("subroutineBody");
+  emitSymbol("}");
+}
+
 void emitClassOpen () {
   emitXMLOpenTag("class");
 }
@@ -70,6 +80,10 @@ void emitClassClose () {
 
 void emitKeyword(char *keyword) {
   emitXMLPrimitive("keyword", keyword);
+}
+
+void emitSymbol(char *symbol) {
+  emitXMLPrimitive("symbol", symbol);
 }
 
 void emitIdentifier(char *identifier) {

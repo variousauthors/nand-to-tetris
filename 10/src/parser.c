@@ -61,7 +61,7 @@ bool match(Buffer *buffer, Token t)
   return false;
 }
 
-bool varName (Buffer *buffer) {
+bool identifier (Buffer *buffer) {
   match(buffer, TK_IDENTIFIER);
   emitIdentifier(identifierBuffer);
   return true;
@@ -73,7 +73,7 @@ bool additionalVarName (Buffer *buffer) {
   }
 
   match(buffer, TK_COMMA);
-  return varName(buffer);
+  return identifier(buffer);
 }
 
 bool type(Buffer *buffer)
@@ -100,8 +100,10 @@ bool type(Buffer *buffer)
   }
   case TK_IDENTIFIER:
   {
-    match(buffer, TK_IDENTIFIER);
+    // emit first because the buffer will be overwritten
+    // if the next token is also an identifier
     emitIdentifier(identifierBuffer);
+    match(buffer, TK_IDENTIFIER);
     return true;
   }
   default:
@@ -111,11 +113,26 @@ bool type(Buffer *buffer)
   }
 }
 
-bool varDecBody(Buffer *buffer)
-{
+bool voidType (Buffer *buffer) {
+  if (lookahead == TK_VOID) {
+    match(buffer, TK_VOID);
+    emitKeyword("void");
+    return true;
+  }
+
+  return type(buffer);
+}
+
+bool parameterList(Buffer *buffer) {
+  emitXMLOpenTag("parameterList");
+  emitXMLCloseTag("parameterList");
+  return true;
+}
+
+bool varDecDetails (Buffer *buffer) {
   // type varName (, varName)* ;
   type(buffer);
-  varName(buffer);
+  identifier(buffer);
 
   while (additionalVarName(buffer))
     ;
@@ -123,6 +140,32 @@ bool varDecBody(Buffer *buffer)
   match(buffer, TK_SEMI);
   emitXMLPrimitive("symbol", ";");
 
+  return true;
+}
+
+bool varDec (Buffer *buffer) {
+  if (lookahead != TK_VAR) {
+    return false;
+  }
+
+  match(buffer, TK_VAR);
+  emitXMLOpenTag("varDec");
+  emitKeyword("var");
+
+  varDecDetails(buffer);
+
+  emitXMLCloseTag("varDec");
+  return true;
+}
+
+bool subroutineBody(Buffer *buffer) {
+  match(buffer, TK_BRACE_L);
+  emitSubroutineBodyOpen();
+  
+  while(varDec(buffer));
+
+  match(buffer, TK_BRACE_R);
+  emitSubroutineBodyClose();
   return true;
 }
 
@@ -139,22 +182,22 @@ bool classVarDec(Buffer *buffer)
   case TK_STATIC:
   {
     match(buffer, TK_STATIC);
-    emitXMLPrimitive("keyword", "static");
-    varDecBody(buffer);
+    emitKeyword("static");
     break;
   }
   case TK_FIELD:
   {
     match(buffer, TK_FIELD);
-    emitXMLPrimitive("keyword", "field");
-    varDecBody(buffer);
+    emitKeyword("field");
     break;
   }
   default:
-    fprintf(stderr, "expected int | char | boolean | classname but got %d\n", lookahead);
-    error("error while parsing type");
+    fprintf(stderr, "expected static | field but got %d\n", lookahead);
+    error("error while parsing class variable declaration");
     return false;
   }
+
+  varDecDetails(buffer);
 
   emitXMLCloseTag("classVarDec");
 
@@ -163,7 +206,50 @@ bool classVarDec(Buffer *buffer)
 
 bool subroutineDec(Buffer *buffer)
 {
-  return false;
+  if (lookahead != TK_FUNCTION && lookahead != TK_CONSTRUCTOR && lookahead != TK_METHOD) {
+    return false;
+  }
+
+  emitXMLOpenTag("subroutineDec");
+
+  switch (lookahead)
+  {
+  case TK_FUNCTION:
+  {
+    match(buffer, TK_FUNCTION);
+    emitKeyword("function");
+    break;
+  }
+  case TK_CONSTRUCTOR:
+  {
+    match(buffer, TK_CONSTRUCTOR);
+    emitXMLPrimitive("constructor", "field");
+    break;
+  }
+  case TK_METHOD:
+  {
+    match(buffer, TK_METHOD);
+    emitXMLPrimitive("method", "field");
+    break;
+  }
+  default:
+    fprintf(stderr, "expected function | constructor | method but got %d\n", lookahead);
+    error("error while parsing subroutine declaration");
+    return false;
+  }
+
+  voidType(buffer);
+  identifier(buffer);
+  match(buffer, TK_PAREN_L);
+  emitSymbol("(");
+  parameterList(buffer);
+  match(buffer, TK_PAREN_R);
+  emitSymbol(")");
+  subroutineBody(buffer);
+
+  emitXMLCloseTag("subroutineDec");
+
+  return true;
 }
 
 bool class(Buffer *buffer)
@@ -221,7 +307,7 @@ bool aToken(Buffer *buffer)
   case TK_WHILE:
   case TK_RETURN:
   {
-    emitXMLPrimitive("keyword", symtable[tokenval].lexptr);
+    emitKeyword(symtable[tokenval].lexptr);
     return match(buffer, lookahead);
   }
   case TK_IDENTIFIER:
