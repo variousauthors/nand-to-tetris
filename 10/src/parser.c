@@ -221,6 +221,7 @@ bool subroutineCall(Buffer *buffer)
   expressionList(buffer);
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
+  match(buffer, TK_SEMI);
   emitSymbol(";");
 
   return true;
@@ -240,7 +241,22 @@ bool doStatement(Buffer *buffer)
   return true;
 }
 
-bool returnStatement(Buffer *buffer) {}
+bool returnStatement(Buffer *buffer) {
+  match(buffer, TK_RETURN);
+
+  emitXMLOpenTag("returnStatement");
+  emitKeyword("return");
+
+  if (lookahead != TK_SEMI) {
+    expression(buffer);
+  }
+
+  match(buffer, TK_SEMI);
+  emitSymbol(";");
+  emitXMLCloseTag("returnStatement");
+
+  return true;
+}
 
 bool ifStatement(Buffer *buffer)
 {
@@ -260,6 +276,18 @@ bool ifStatement(Buffer *buffer)
   statements(buffer);
   match(buffer, TK_BRACE_R);
   emitSymbol("}");
+
+  // optional else
+  if (lookahead == TK_ELSE)
+  {
+    match(buffer, TK_ELSE);
+    emitKeyword("else");
+    match(buffer, TK_BRACE_L);
+    emitSymbol("{");
+    statements(buffer);
+    match(buffer, TK_BRACE_R);
+    emitSymbol("}");
+  }
 
   emitXMLCloseTag("ifStatement");
 
@@ -357,6 +385,7 @@ bool subroutineBody(Buffer *buffer)
   statements(buffer);
 
   match(buffer, TK_BRACE_R);
+  emitSymbol("}");
   emitSubroutineBodyClose();
   return true;
 }
@@ -462,6 +491,7 @@ bool class(Buffer *buffer)
   emitIdentifier(symtable[tempval].lexptr);
 
   match(buffer, TK_BRACE_L);
+  emitSymbol("{");
 
   while (classVarDec(buffer))
     ;
@@ -470,6 +500,7 @@ bool class(Buffer *buffer)
 
   match(buffer, TK_BRACE_R);
 
+  emitSymbol("}");
   emitClassClose();
 
   return true;

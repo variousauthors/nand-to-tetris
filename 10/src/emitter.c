@@ -67,7 +67,6 @@ void emitSubroutineBodyOpen () {
 
 void emitSubroutineBodyClose () {
   emitXMLCloseTag("subroutineBody");
-  emitSymbol("}");
 }
 
 void emitClassOpen () {
