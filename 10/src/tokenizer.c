@@ -51,28 +51,56 @@ Token nextToken(Buffer *buffer)
 
       c = nextchar(buffer);
 
-      if (c != '/' && c != '*') {
+      if (c != '/' && c != '*')
+      {
         // this is not a comment
         rollback(buffer);
         return TK_SLASH;
       }
 
-      // advance past the comment
-      while ((c = nextchar(buffer)) != '\n')
+      if (c == '*')
       {
-        commit(buffer);
+        // multi-line comment
+        while ((c = nextchar(buffer)) != EOF)
+        {
+          // if we hit * then / we are done
+          if (c == '*') {
+            c = nextchar(buffer);
+
+            if (c == '/') {
+              // we are done
+              commit(buffer);
+              break;
+            }
+          }
+
+          commit(buffer);
+        }
+        // put the linebreak back on there
+        rollback(buffer);
+        break;
       }
-      // put the linebreak back on there
-      rollback(buffer);
-      break;
+      else
+      {
+        // single line comment
+        while ((c = nextchar(buffer)) != '\n')
+        {
+          commit(buffer);
+        }
+        // put the linebreak back on there
+        rollback(buffer);
+        break;
+      }
     }
-    case '0': {
+    case '0':
+    {
       // 0 can only occur on it's own
       commit(buffer);
 
       c = nextchar(buffer);
 
-      if (isdigit(c)) {
+      if (isdigit(c))
+      {
         error("0 cannot appear at the start of a number");
       }
 
@@ -144,7 +172,8 @@ Token nextToken(Buffer *buffer)
 
       return symtable[p].token;
     }
-    case '"': {
+    case '"':
+    {
       int i = 0;
 
       while ((c = nextchar(buffer)) != '"')
@@ -168,24 +197,42 @@ Token nextToken(Buffer *buffer)
     }
 
     // symbols
-    case '{': return TK_BRACE_L;
-    case '}': return TK_BRACE_R;
-    case '(': return TK_PAREN_L;
-    case ')': return TK_PAREN_R;
-    case '[': return TK_BRACKET_L;
-    case ']': return TK_BRACKET_R;
-    case '.': return TK_DOT;
-    case ',': return TK_COMMA;
-    case ';': return TK_SEMI;
-    case '+': return TK_PLUS;
-    case '-': return TK_MINUS;
-    case '*': return TK_ASTERISK;
-    case '&': return TK_AMP;
-    case '|': return TK_BAR;
-    case '<': return TK_ANGLE_BRACKET_L;
-    case '>': return TK_ANGLE_BRACKET_R;
-    case '=': return TK_EQUAL;
-    case '~': return TK_TILDE;
+    case '{':
+      return TK_BRACE_L;
+    case '}':
+      return TK_BRACE_R;
+    case '(':
+      return TK_PAREN_L;
+    case ')':
+      return TK_PAREN_R;
+    case '[':
+      return TK_BRACKET_L;
+    case ']':
+      return TK_BRACKET_R;
+    case '.':
+      return TK_DOT;
+    case ',':
+      return TK_COMMA;
+    case ';':
+      return TK_SEMI;
+    case '+':
+      return TK_PLUS;
+    case '-':
+      return TK_MINUS;
+    case '*':
+      return TK_ASTERISK;
+    case '&':
+      return TK_AMP;
+    case '|':
+      return TK_BAR;
+    case '<':
+      return TK_ANGLE_BRACKET_L;
+    case '>':
+      return TK_ANGLE_BRACKET_R;
+    case '=':
+      return TK_EQUAL;
+    case '~':
+      return TK_TILDE;
 
     default:
       fprintf(stderr, "unknown char: |%c| %d\n", c, c);
