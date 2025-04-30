@@ -167,11 +167,44 @@ bool varDec(Buffer *buffer)
   return true;
 }
 
+bool expression (Buffer *buffer) {
+  emitXMLOpenTag("expression");
+  emitSymbol(";");
+  emitXMLCloseTag("expression");
+
+  return true;
+}
+
 bool ifStatement(Buffer *buffer) { }
 bool whileStatement(Buffer *buffer) {}
 bool doStatement(Buffer *buffer) {}
 bool returnStatement(Buffer *buffer) {}
-bool letStatement(Buffer *buffer) {}
+
+bool letStatement(Buffer *buffer) {
+  match(buffer, TK_LET);
+
+  emitXMLOpenTag("letStatement");
+  emitKeyword("let");
+
+  identifier(buffer);
+
+  if (lookahead == TK_BRACKET_L) {
+    // optional array expression
+    match(buffer, TK_BRACKET_L);
+    emitSymbol("[");
+    expression(buffer);
+    emitSymbol("]");
+    match(buffer, TK_BRACKET_R);
+  }
+
+  match(buffer, TK_EQUAL);
+  emitSymbol("=");
+  expression(buffer);
+
+  emitXMLCloseTag("letStatement");
+
+  return true;
+}
 
 bool statement(Buffer *buffer)
 {
