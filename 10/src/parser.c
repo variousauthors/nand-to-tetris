@@ -69,6 +69,10 @@ bool identifier(Buffer *buffer)
   return true;
 }
 
+bool varName(Buffer *buffer) {
+  return identifier(buffer);
+}
+
 bool additionalVarName(Buffer *buffer)
 {
   if (lookahead != TK_COMMA)
@@ -78,6 +82,11 @@ bool additionalVarName(Buffer *buffer)
 
   match(buffer, TK_COMMA);
   return identifier(buffer);
+}
+
+bool isType(Token lookahead)
+{
+  return lookahead == TK_INT || lookahead == TK_CHAR || lookahead == TK_BOOLEAN || lookahead == TK_IDENTIFIER;
 }
 
 bool type(Buffer *buffer)
@@ -129,9 +138,35 @@ bool voidType(Buffer *buffer)
   return type(buffer);
 }
 
+bool parameter (Buffer *buffer) {
+  type(buffer);
+  varName(buffer);
+
+  return true;
+}
+
+bool additionalParameter (Buffer *buffer) {
+  if (lookahead != TK_COMMA) {
+    return false;
+  }
+
+  match(buffer, TK_COMMA);
+  emitSymbol(",");
+  return parameter(buffer);
+}
+
 bool parameterList(Buffer *buffer)
 {
   emitXMLOpenTag("parameterList");
+
+  if (isType(lookahead))
+  {
+    // we have a parameter list
+    parameter(buffer);
+
+    while(additionalParameter(buffer));
+  }
+
   emitXMLCloseTag("parameterList");
   return true;
 }
@@ -140,7 +175,7 @@ bool varDecDetails(Buffer *buffer)
 {
   // type varName (, varName)* ;
   type(buffer);
-  identifier(buffer);
+  varName(buffer);
 
   while (additionalVarName(buffer))
     ;
@@ -229,7 +264,8 @@ bool subroutineCall(Buffer *buffer)
   return true;
 }
 
-bool whileStatement(Buffer *buffer) {
+bool whileStatement(Buffer *buffer)
+{
   match(buffer, TK_WHILE);
 
   emitXMLOpenTag("whileStatement");
@@ -264,13 +300,15 @@ bool doStatement(Buffer *buffer)
   return true;
 }
 
-bool returnStatement(Buffer *buffer) {
+bool returnStatement(Buffer *buffer)
+{
   match(buffer, TK_RETURN);
 
   emitXMLOpenTag("returnStatement");
   emitKeyword("return");
 
-  if (lookahead != TK_SEMI) {
+  if (lookahead != TK_SEMI)
+  {
     expression(buffer);
   }
 
@@ -469,13 +507,13 @@ bool subroutineDec(Buffer *buffer)
   case TK_CONSTRUCTOR:
   {
     match(buffer, TK_CONSTRUCTOR);
-    emitXMLPrimitive("constructor", "field");
+    emitKeyword("constructor");
     break;
   }
   case TK_METHOD:
   {
     match(buffer, TK_METHOD);
-    emitXMLPrimitive("method", "field");
+    emitKeyword("method");
     break;
   }
   default:
