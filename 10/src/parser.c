@@ -81,6 +81,8 @@ bool additionalVarName(Buffer *buffer)
   }
 
   match(buffer, TK_COMMA);
+  emitSymbol(",");
+
   return identifier(buffer);
 }
 
@@ -205,19 +207,54 @@ bool varDec(Buffer *buffer)
 
 bool expression(Buffer *buffer)
 {
+  if (lookahead == TK_PAREN_R) {
+    return false;
+  }
+
   emitXMLOpenTag("expression");
-  emitXMLOpenTag("term");
-  identifier(buffer);
-  emitXMLCloseTag("term");
+
+  switch (lookahead)
+  {
+  case TK_THIS: {
+    emitXMLOpenTag("term");
+    match(buffer, TK_THIS);
+    emitKeyword("this");
+    emitXMLCloseTag("term");
+    break;
+  }
+  case TK_IDENTIFIER: {
+    emitXMLOpenTag("term");
+    identifier(buffer);
+    emitXMLCloseTag("term");
+    break;
+  }
+  default:
+    error("failed to parse expression");
+  }
+
   emitXMLCloseTag("expression");
 
   return true;
 }
 
+bool additionalExpressions(Buffer *buffer) {
+  if (lookahead != TK_COMMA) {
+    return false;
+  }
+
+  match(buffer, TK_COMMA);
+  emitSymbol(",");
+
+  return expression(buffer);
+}
+
 bool expressionList(Buffer *buffer)
 {
   emitXMLOpenTag("expressionList");
+  expression(buffer);
+  while(additionalExpressions(buffer));
   emitXMLCloseTag("expressionList");
+
   return true;
 }
 
