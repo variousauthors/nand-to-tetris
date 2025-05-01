@@ -21,6 +21,8 @@ bool match(Buffer *buffer, Token t);
 bool aToken(Buffer *buffer);
 bool class(Buffer *buffer);
 bool expression(Buffer *buffer);
+bool functionCall(Buffer *buffer, char *subroutineName);
+bool methodCall(Buffer *buffer, char *subjectName);
 
 int parse(FILE *file)
 {
@@ -417,9 +419,17 @@ bool term(Buffer *buffer)
       match(buffer, TK_BRACKET_R);
       emitSymbol("]");
     }
+    else if (lookahead == TK_DOT)
+    {
+      methodCall(buffer, id);
+    }
+    else if (lookahead == TK_PAREN_L)
+    {
+      functionCall(buffer, id);
+    }
     else
     {
-      // varName | subroutineCall
+      // varName
       emitIdentifier(id);
     }
 
@@ -545,13 +555,59 @@ bool additionalExpressions(Buffer *buffer)
   return expression(buffer);
 }
 
-bool expressionList(Buffer *buffer)
+bool expressionList(Buffer *buffer, bool isEmpty)
 {
   emitXMLOpenTag("expressionList");
-  expression(buffer);
-  while (additionalExpressions(buffer))
-    ;
+
+  // expression and term have no way to express "emptiness"
+  // so the caller will need to have the context to know
+  // whether this list terminates immediately or not
+  // (based on the lookahead)
+  if (!isEmpty)
+  {
+    expression(buffer);
+    while (additionalExpressions(buffer))
+      ;
+  }
+
   emitXMLCloseTag("expressionList");
+
+  return true;
+}
+
+bool functionCall(Buffer *buffer, char *subroutineName)
+{
+  // subroutineName ( expressionList )
+  emitIdentifier(subroutineName);
+  match(buffer, TK_PAREN_L);
+  emitSymbol("(");
+
+  expressionList(buffer, lookahead == TK_PAREN_R);
+
+  match(buffer, TK_PAREN_R);
+  emitSymbol(")");
+
+  return true;
+}
+
+bool methodCall(Buffer *buffer, char *subjectName)
+{
+  // ( className | varName ) . subroutineName ( expressionList )
+  match(buffer, TK_DOT);
+  // (className | varName) . subroutineName ( expressionList )
+  char *id2 = symtable[tokenval].lexptr;
+
+  emitIdentifier(subjectName);
+  emitSymbol(".");
+  emitIdentifier(id2);
+  match(buffer, TK_IDENTIFIER);
+  match(buffer, TK_PAREN_L);
+  emitSymbol("(");
+
+  expressionList(buffer, lookahead == TK_PAREN_R);
+
+  match(buffer, TK_PAREN_R);
+  emitSymbol(")");
 
   return true;
 }
@@ -563,43 +619,22 @@ bool subroutineCall(Buffer *buffer)
     return false;
   }
 
-  char *id1 = symtable[tokenval].lexptr;
+  char *id = symtable[tokenval].lexptr;
   match(buffer, TK_IDENTIFIER);
 
   if (lookahead == TK_DOT)
   {
-    match(buffer, TK_DOT);
-    // (className | varName) . subroutineName ( expressionList )
-    char *id2 = symtable[tokenval].lexptr;
-
-    emitIdentifier(id1);
-    emitSymbol(".");
-    emitIdentifier(id2);
-    match(buffer, TK_IDENTIFIER);
+    return methodCall(buffer, id);
   }
   else if (lookahead == TK_PAREN_L)
   {
-    // subroutineName ( expressionList )
-    emitIdentifier(id1);
+    return functionCall(buffer, id);
   }
   else
   {
     error("expected . or ( while parsing subroutine call");
     return false;
   }
-
-  match(buffer, TK_PAREN_L);
-  emitSymbol("(");
-
-  if (lookahead != TK_PAREN_R)
-  {
-    expressionList(buffer);
-  }
-
-  match(buffer, TK_PAREN_R);
-  emitSymbol(")");
-  match(buffer, TK_SEMI);
-  emitSymbol(";");
 
   return true;
 }
@@ -635,6 +670,8 @@ bool doStatement(Buffer *buffer)
   emitXMLOpenTag("doStatement");
   emitKeyword("do");
   subroutineCall(buffer);
+  match(buffer, TK_SEMI);
+  emitSymbol(";");
   emitXMLCloseTag("doStatement");
 
   return true;

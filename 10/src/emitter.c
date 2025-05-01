@@ -14,13 +14,16 @@ int MAX_INDENT = 128;
 int SPACES = 2;
 
 /** returns a size appropriate for indentation whitespace */
-int indentSize(int indent) {
+int indentSize(int indent)
+{
   return indent * SPACES + 1;
 }
 
-void makeIndentation (char *indentation) {
+void makeIndentation(char *indentation)
+{
   int i = 0;
-  for (; i < indent * SPACES && i < MAX_INDENT; i++) {
+  for (; i < indent * SPACES && i < MAX_INDENT; i++)
+  {
     indentation[i] = ' ';
   }
 
@@ -28,21 +31,24 @@ void makeIndentation (char *indentation) {
   indentation[i] = '\0';
 }
 
-void emitXMLPrimitive(char* tag, char* value) {
+void emitXMLPrimitive(char *tag, char *value)
+{
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s<%s> %s </%s>\n", indentation, tag, value, tag);
 }
 
-void emitXMLPrimitiveInteger(char* tag, int value) {
+void emitXMLPrimitiveInteger(char *tag, int value)
+{
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s<%s> %d </%s>\n", indentation, tag, value, tag);
 }
 
-void emitXMLOpenTag(char* tag) {
+void emitXMLOpenTag(char *tag)
+{
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
@@ -50,7 +56,8 @@ void emitXMLOpenTag(char* tag) {
   indent++;
 }
 
-void emitXMLCloseTag(char* tag) {
+void emitXMLCloseTag(char *tag)
+{
   indent--;
 
   char indentation[indentSize(indent)];
@@ -59,38 +66,71 @@ void emitXMLCloseTag(char* tag) {
   printf("%s</%s>\n", indentation, tag);
 }
 
-void emitXMLSelfClosingTag(char* tag) {
+void emitXMLSelfClosingTag(char *tag)
+{
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   printf("%s<%s/>\n", indentation, tag);
 }
 
-void emitSubroutineBodyOpen () {
+void emitSubroutineBodyOpen()
+{
   emitXMLOpenTag("subroutineBody");
   emitSymbol("{");
 }
 
-void emitSubroutineBodyClose () {
+void emitSubroutineBodyClose()
+{
   emitXMLCloseTag("subroutineBody");
 }
 
-void emitClassOpen () {
+void emitClassOpen()
+{
   emitXMLOpenTag("class");
 }
 
-void emitClassClose () {
+void emitClassClose()
+{
   emitXMLCloseTag("class");
 }
 
-void emitKeyword(char *keyword) {
+void emitKeyword(char *keyword)
+{
   emitXMLPrimitive("keyword", keyword);
 }
 
-void emitSymbol(char *symbol) {
+void emitSymbol(char *symbol)
+{
+  if (symbol[1] == '\0')
+  {
+    // this might need to be escaped
+    char initial = symbol[0];
+
+    switch (initial)
+    {
+    case '&':
+    {
+      emitXMLPrimitive("symbol", "&amp;");
+      return;
+    }
+    case '<': {
+      emitXMLPrimitive("symbol", "&lt;");
+      return;
+    }
+    case '>': {
+      emitXMLPrimitive("symbol", "&gt;");
+      return;
+    }
+    default:
+      break;
+    }
+  }
+
   emitXMLPrimitive("symbol", symbol);
 }
 
-void emitIdentifier(char *identifier) {
+void emitIdentifier(char *identifier)
+{
   emitXMLPrimitive("identifier", identifier);
 }
