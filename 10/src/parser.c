@@ -20,6 +20,7 @@ bool statements(Buffer *buffer);
 bool match(Buffer *buffer, Token t);
 bool aToken(Buffer *buffer);
 bool class(Buffer *buffer);
+bool expression(Buffer *buffer);
 
 int parse(FILE *file)
 {
@@ -69,7 +70,8 @@ bool identifier(Buffer *buffer)
   return true;
 }
 
-bool varName(Buffer *buffer) {
+bool varName(Buffer *buffer)
+{
   return identifier(buffer);
 }
 
@@ -140,15 +142,18 @@ bool voidType(Buffer *buffer)
   return type(buffer);
 }
 
-bool parameter (Buffer *buffer) {
+bool parameter(Buffer *buffer)
+{
   type(buffer);
   varName(buffer);
 
   return true;
 }
 
-bool additionalParameter (Buffer *buffer) {
-  if (lookahead != TK_COMMA) {
+bool additionalParameter(Buffer *buffer)
+{
+  if (lookahead != TK_COMMA)
+  {
     return false;
   }
 
@@ -166,7 +171,8 @@ bool parameterList(Buffer *buffer)
     // we have a parameter list
     parameter(buffer);
 
-    while(additionalParameter(buffer));
+    while (additionalParameter(buffer))
+      ;
   }
 
   emitXMLCloseTag("parameterList");
@@ -205,40 +211,331 @@ bool varDec(Buffer *buffer)
   return true;
 }
 
-bool expression(Buffer *buffer)
+bool unaryOp(Buffer *buffer)
 {
-  if (lookahead == TK_PAREN_R) {
+  switch (lookahead)
+  {
+  case TK_TILDE:
+  {
+    match(buffer, TK_TILDE);
+    emitSymbol("~");
+    break;
+  }
+  case TK_MINUS:
+  {
+    match(buffer, TK_MINUS);
+    emitSymbol("-");
+    break;
+  }
+  default:
+    fprintf(stderr, "got %d\n", lookahead);
+    error("while parsing unary op");
     return false;
   }
 
-  emitXMLOpenTag("expression");
+  return true;
+}
+
+bool term(Buffer *buffer)
+{
+  emitXMLOpenTag("term");
 
   switch (lookahead)
   {
-  case TK_THIS: {
-    emitXMLOpenTag("term");
-    match(buffer, TK_THIS);
-    emitKeyword("this");
-    emitXMLCloseTag("term");
+  case TK_TILDE:
+  case TK_MINUS:
+  {
+    unaryOp(buffer);
+    term(buffer);
     break;
   }
-  case TK_IDENTIFIER: {
-    emitXMLOpenTag("term");
-    identifier(buffer);
-    emitXMLCloseTag("term");
+  case TK_INTEGER:
+  {
+    // emit first because tokenval gets clobbered
+    emitXMLPrimitiveInteger("integerConstant", tokenval);
+    match(buffer, TK_INTEGER);
+    break;
+  }
+  case TK_STRING:
+  {
+    // we emit first because string buffer might get
+    // overwritten if we match first
+    emitXMLPrimitive("stringConstant", identifierBuffer);
+    match(buffer, TK_STRING);
+    break;
+  }
+  case TK_PAREN_L:
+  {
+    // ( expression )
+    match(buffer, TK_PAREN_L);
+    emitSymbol("(");
+    expression(buffer);
+    match(buffer, TK_PAREN_R);
+    emitSymbol(")");
+    break;
+  }
+  case TK_CLASS:
+  {
+    match(buffer, TK_CLASS);
+    emitKeyword("class");
+    break;
+  }
+  case TK_CONSTRUCTOR:
+  {
+    match(buffer, TK_CONSTRUCTOR);
+    emitKeyword("constructor");
+    break;
+  }
+  case TK_FUNCTION:
+  {
+    match(buffer, TK_FUNCTION);
+    emitKeyword("function");
+    break;
+  }
+  case TK_METHOD:
+  {
+    match(buffer, TK_METHOD);
+    emitKeyword("method");
+    break;
+  }
+  case TK_FIELD:
+  {
+    match(buffer, TK_FIELD);
+    emitKeyword("field");
+    break;
+  }
+  case TK_STATIC:
+  {
+    match(buffer, TK_STATIC);
+    emitKeyword("static");
+    break;
+  }
+  case TK_VAR:
+  {
+    match(buffer, TK_VAR);
+    emitKeyword("var");
+    break;
+  }
+  case TK_INT:
+  {
+    match(buffer, TK_INT);
+    emitKeyword("int");
+    break;
+  }
+  case TK_CHAR:
+  {
+    match(buffer, TK_CHAR);
+    emitKeyword("char");
+    break;
+  }
+  case TK_BOOLEAN:
+  {
+    match(buffer, TK_BOOLEAN);
+    emitKeyword("boolean");
+    break;
+  }
+  case TK_VOID:
+  {
+    match(buffer, TK_VOID);
+    emitKeyword("void");
+    break;
+  }
+  case TK_TRUE:
+  {
+    match(buffer, TK_TRUE);
+    emitKeyword("true");
+    break;
+  }
+  case TK_FALSE:
+  {
+    match(buffer, TK_FALSE);
+    emitKeyword("false");
+    break;
+  }
+  case TK_NULL:
+  {
+    match(buffer, TK_NULL);
+    emitKeyword("null");
+    break;
+  }
+  case TK_LET:
+  {
+    match(buffer, TK_LET);
+    emitKeyword("let");
+    break;
+  }
+  case TK_DO:
+  {
+    match(buffer, TK_DO);
+    emitKeyword("do");
+    break;
+  }
+  case TK_IF:
+  {
+    match(buffer, TK_IF);
+    emitKeyword("if");
+    break;
+  }
+  case TK_ELSE:
+  {
+    match(buffer, TK_ELSE);
+    emitKeyword("else");
+    break;
+  }
+  case TK_WHILE:
+  {
+    match(buffer, TK_WHILE);
+    emitKeyword("while");
+    break;
+  }
+  case TK_RETURN:
+  {
+    match(buffer, TK_RETURN);
+    emitKeyword("return");
+    break;
+  }
+  case TK_THIS:
+  {
+    match(buffer, TK_THIS);
+    emitKeyword("this");
+    break;
+  }
+  case TK_IDENTIFIER:
+  {
+    // varName || varName[expression] || subroutineCall
+    char *id = symtable[tokenval].lexptr;
+    match(buffer, TK_IDENTIFIER);
+
+    if (lookahead == TK_BRACKET_L)
+    {
+      // varName[expression]
+      emitIdentifier(id);
+
+      match(buffer, TK_BRACKET_L);
+      emitSymbol("[");
+      expression(buffer);
+      match(buffer, TK_BRACKET_R);
+      emitSymbol("]");
+    }
+    else
+    {
+      // varName | subroutineCall
+      emitIdentifier(id);
+    }
+
     break;
   }
   default:
     error("failed to parse expression");
   }
 
+  emitXMLCloseTag("term");
+
+  return true;
+}
+
+bool op(Buffer *buffer)
+{
+  switch (lookahead)
+  {
+  case TK_PLUS:
+  {
+    match(buffer, TK_PLUS);
+    emitSymbol("+");
+    break;
+  }
+  case TK_MINUS:
+  {
+    match(buffer, TK_MINUS);
+    emitSymbol("-");
+    break;
+  }
+  case TK_ASTERISK:
+  {
+    match(buffer, TK_ASTERISK);
+    emitSymbol("*");
+    break;
+  }
+  case TK_SLASH:
+  {
+    match(buffer, TK_SLASH);
+    emitSymbol("/");
+    break;
+  }
+  case TK_AMP:
+  {
+    match(buffer, TK_AMP);
+    emitSymbol("&");
+    break;
+  }
+  case TK_BAR:
+  {
+    match(buffer, TK_BAR);
+    emitSymbol("|");
+    break;
+  }
+  case TK_ANGLE_BRACKET_L:
+  {
+    match(buffer, TK_ANGLE_BRACKET_L);
+    emitSymbol("<");
+    break;
+  }
+  case TK_ANGLE_BRACKET_R:
+  {
+    match(buffer, TK_ANGLE_BRACKET_R);
+    emitSymbol(">");
+    break;
+  }
+  case TK_EQUAL:
+  {
+    match(buffer, TK_EQUAL);
+    emitSymbol("=");
+    break;
+  }
+  default:
+    fprintf(stderr, "expected binary operator got %d\n", lookahead);
+    error("error while parsing op");
+    return false;
+  }
+
+  return true;
+}
+
+bool isOp(Token token)
+{
+  return token == TK_PLUS || token == TK_MINUS || token == TK_ASTERISK || token == TK_SLASH || token == TK_AMP || token == TK_BAR || token == TK_ANGLE_BRACKET_L || token == TK_ANGLE_BRACKET_R || token == TK_EQUAL;
+}
+
+bool opTerm(Buffer *buffer)
+{
+  if (!isOp(lookahead))
+  {
+    return false;
+  }
+
+  op(buffer);
+  return term(buffer);
+}
+
+bool expression(Buffer *buffer)
+{
+  emitXMLOpenTag("expression");
+
+  // term (op term)*
+
+  term(buffer);
+  while (opTerm(buffer))
+    ;
+
   emitXMLCloseTag("expression");
 
   return true;
 }
 
-bool additionalExpressions(Buffer *buffer) {
-  if (lookahead != TK_COMMA) {
+bool additionalExpressions(Buffer *buffer)
+{
+  if (lookahead != TK_COMMA)
+  {
     return false;
   }
 
@@ -252,7 +549,8 @@ bool expressionList(Buffer *buffer)
 {
   emitXMLOpenTag("expressionList");
   expression(buffer);
-  while(additionalExpressions(buffer));
+  while (additionalExpressions(buffer))
+    ;
   emitXMLCloseTag("expressionList");
 
   return true;
@@ -292,7 +590,12 @@ bool subroutineCall(Buffer *buffer)
 
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
-  expressionList(buffer);
+
+  if (lookahead != TK_PAREN_R)
+  {
+    expressionList(buffer);
+  }
+
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
   match(buffer, TK_SEMI);
