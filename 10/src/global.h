@@ -27,12 +27,12 @@ extern int tokenval;
 extern int lineno;
 extern int currentAddress;
 
-struct entry
+typedef struct entry
 {
   char *lexptr;
   int token;
   int value; // the memory address or line number
-};
+} Entry;
 
 extern struct entry symtable[];
 

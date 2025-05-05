@@ -1,4 +1,3 @@
-#include "global.h"
 #include "symbol.h"
 #include "tokenizer.h"
 #include "init.h"

@@ -1,6 +1,13 @@
 #include "error.h"
-#include "global.h"
+#include "symbol.h"
 #include <string.h>
+
+/** this symbol table is used by the tokenizer to store
+ * identifiers... it is invoked when we encounter a token
+ * and doesn't really fit for the class symbol table or
+ * subroutine symbol table use case... so lets
+ * implement another symbol table that can do the job
+ */
 
 #define STRMAX 32000
 #define SYMMAX 1600
@@ -45,4 +52,49 @@ int insert(char s[], int tok, int value)
   strcpy(symtable[lastentry].lexptr, s);
 
   return lastentry;
+}
+
+/** == Scoped Symbol Table ==  */
+void startSubroutine(ScopedSymbolTable *table) {
+  table->currentIndex = 0;
+  table->length = 0;
+  table->nextStatic = 0;
+  table->nextField = 0;
+  table->nextArg = 0;
+  table->nextVar = 0;
+}
+
+void define(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind) {
+  // TODO bounds checking on the underlying array
+
+  table->entries[table->currentIndex].name = name;
+  table->entries[table->currentIndex].type = type;
+  table->entries[table->currentIndex].kind = kind;
+
+  switch (kind)
+  {
+  case VK_STATIC: { 
+    table->entries[table->currentIndex].position = table->nextStatic;
+    table->nextStatic++;
+    break;
+  }
+  case VK_FIELD: { 
+    table->entries[table->currentIndex].position = table->nextField;
+    table->nextField++;
+    break;
+  }
+  case VK_ARG: { 
+    table->entries[table->currentIndex].position = table->nextArg;
+    table->nextArg++;
+    break;
+  }
+  case VK_VAR: { 
+    table->entries[table->currentIndex].position = table->nextVar;
+    table->nextVar++;
+    break;
+  }
+  default:
+    error("tried to add unrecognized kind to scoped symbol table");
+    break;
+  }
 }

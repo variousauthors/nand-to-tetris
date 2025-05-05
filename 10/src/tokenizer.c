@@ -1,6 +1,5 @@
 #include "tokenizer.h"
 #include "error.h"
-#include "global.h"
 #include "symbol.h"
 #include <ctype.h>
 #include <stdbool.h>
