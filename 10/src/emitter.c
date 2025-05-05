@@ -132,11 +132,6 @@ void emitSymbol(char *symbol)
   emitXMLPrimitive("symbol", symbol);
 }
 
-void emitIdentifier(char *identifier)
-{
-  emitXMLPrimitive("identifier", identifier);
-}
-
 void emitIdentifierClass(char *identifier, char *mode)
 {
   char indentation[indentSize(indent)];
@@ -194,7 +189,7 @@ ScopedSymbolTableEntry *getIndexFromGlobalTables(char *identifier)
   return 0;
 }
 
-void emitIdentifierSpecial(char *identifier, char *mode)
+void emitIdentifier(char *identifier, char *mode)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);

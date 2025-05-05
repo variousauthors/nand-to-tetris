@@ -77,7 +77,7 @@ bool varNameIdentifier(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTab
   defineScopedSymbol(table, entry->name, entry->type, entry->kind);
 
   match(buffer, TK_IDENTIFIER);
-  emitIdentifierSpecial(identifierBuffer, "declaration");
+  emitIdentifier(identifierBuffer, "declaration");
   return true;
 }
 
@@ -467,7 +467,7 @@ bool term(Buffer *buffer)
     if (lookahead == TK_BRACKET_L)
     {
       // varName[expression]
-      emitIdentifierSpecial(id, "reference");
+      emitIdentifier(id, "reference");
 
       match(buffer, TK_BRACKET_L);
       emitSymbol("[");
@@ -486,7 +486,7 @@ bool term(Buffer *buffer)
     else
     {
       // varName
-      emitIdentifierSpecial(id, "reference");
+      emitIdentifier(id, "reference");
     }
 
     break;
@@ -795,7 +795,7 @@ bool letStatement(Buffer *buffer)
   emitXMLOpenTag("letStatement");
   emitKeyword("let");
 
-  emitIdentifierSpecial(identifierBuffer, "reference");
+  emitIdentifier(identifierBuffer, "reference");
   match(buffer, TK_IDENTIFIER);
 
   if (lookahead == TK_BRACKET_L)
