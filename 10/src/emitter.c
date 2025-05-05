@@ -137,6 +137,33 @@ void emitIdentifier(char *identifier)
   emitXMLPrimitive("identifier", identifier);
 }
 
+void emitIdentifierType(char *identifier)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // output "declaration" as opposed to "reference"
+  printf("%s<identifier category=\"type\" mode=\"reference\"> %s </identifier>\n", indentation, identifier);
+}
+
+void emitIdentifierClass(char *identifier)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // output "declaration" as opposed to "reference"
+  printf("%s<identifier category=\"class\" mode=\"declaration\"> %s </identifier>\n", indentation, identifier);
+}
+
+void emitIdentifierSubroutine(char *identifier)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // output "declaration" as opposed to "reference"
+  printf("%s<identifier category=\"subroutine\" mode=\"declaration\"> %s </identifier>\n", indentation, identifier);
+}
+
 char *getCategory(VariableKind kind)
 {
   switch (kind)

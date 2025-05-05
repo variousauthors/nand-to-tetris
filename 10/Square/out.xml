@@ -1,35 +1,35 @@
 <class>
   <keyword> class </keyword>
-  <identifier> Square </identifier>
+  <identifier category="class" mode="declaration"> Square </identifier>
   <symbol> { </symbol>
   <classVarDec>
     <keyword> field </keyword>
     <keyword> int </keyword>
-    <identifier> x </identifier>
+    <identifier category="field" position="0" mode="declaration"> x </identifier>
     <symbol> , </symbol>
-    <identifier> y </identifier>
+    <identifier category="field" position="1" mode="declaration"> y </identifier>
     <symbol> ; </symbol>
   </classVarDec>
   <classVarDec>
     <keyword> field </keyword>
     <keyword> int </keyword>
-    <identifier> size </identifier>
+    <identifier category="field" position="2" mode="declaration"> size </identifier>
     <symbol> ; </symbol>
   </classVarDec>
   <subroutineDec>
     <keyword> constructor </keyword>
     <identifier> Square </identifier>
-    <identifier> new </identifier>
+    <identifier category="subroutine" mode="declaration"> new </identifier>
     <symbol> ( </symbol>
     <parameterList>
       <keyword> int </keyword>
-      <identifier> Ax </identifier>
+      <identifier category="argument" position="0" mode="declaration"> Ax </identifier>
       <symbol> , </symbol>
       <keyword> int </keyword>
-      <identifier> Ay </identifier>
+      <identifier category="argument" position="1" mode="declaration"> Ay </identifier>
       <symbol> , </symbol>
       <keyword> int </keyword>
-      <identifier> Asize </identifier>
+      <identifier category="argument" position="2" mode="declaration"> Asize </identifier>
     </parameterList>
     <symbol> ) </symbol>
     <subroutineBody>
@@ -93,7 +93,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> dispose </identifier>
+    <identifier category="subroutine" mode="declaration"> dispose </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -128,7 +128,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> draw </identifier>
+    <identifier category="subroutine" mode="declaration"> draw </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -205,7 +205,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> erase </identifier>
+    <identifier category="subroutine" mode="declaration"> erase </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -282,7 +282,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> incSize </identifier>
+    <identifier category="subroutine" mode="declaration"> incSize </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -392,7 +392,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> decSize </identifier>
+    <identifier category="subroutine" mode="declaration"> decSize </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -462,7 +462,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> moveUp </identifier>
+    <identifier category="subroutine" mode="declaration"> moveUp </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -644,7 +644,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> moveDown </identifier>
+    <identifier category="subroutine" mode="declaration"> moveDown </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -836,7 +836,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> moveLeft </identifier>
+    <identifier category="subroutine" mode="declaration"> moveLeft </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
@@ -1018,7 +1018,7 @@
   <subroutineDec>
     <keyword> method </keyword>
     <keyword> void </keyword>
-    <identifier> moveRight </identifier>
+    <identifier category="subroutine" mode="declaration"> moveRight </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>

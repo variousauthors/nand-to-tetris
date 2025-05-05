@@ -61,19 +61,21 @@ bool match(Buffer *buffer, Token t)
   return false;
 }
 
-bool identifier(Buffer *buffer)
+bool identifierSubroutine(Buffer *buffer)
 {
+  emitIdentifierSubroutine(identifierBuffer);
   match(buffer, TK_IDENTIFIER);
-  emitIdentifier(identifierBuffer);
   return true;
 }
 
-bool parameterName(Buffer *buffer)
+bool identifier(Buffer *buffer)
 {
-  return identifier(buffer);
+  emitIdentifier(identifierBuffer);
+  match(buffer, TK_IDENTIFIER);
+  return true;
 }
 
-bool varName(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
+bool varNameIdentifier(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
 {
   entry->name = &symtable[tokenval];
   defineScopedSymbol(table, entry->name, entry->type, entry->kind);
@@ -93,7 +95,7 @@ bool additionalVarName(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, Sco
   match(buffer, TK_COMMA);
   emitSymbol(",");
 
-  varName(buffer, scopedSymbolTable, entry);
+  varNameIdentifier(buffer, scopedSymbolTable, entry);
 
   return true;
 }
@@ -133,7 +135,7 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
     // emit first because the buffer will be overwritten
     // if the next token is also an identifier
     entry->type = &symtable[tokenval];
-    emitIdentifier(identifierBuffer);
+    emitIdentifierType(identifierBuffer);
     match(buffer, TK_IDENTIFIER);
     return true;
   }
@@ -144,7 +146,8 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
   }
 }
 
-bool type(Buffer *buffer)
+/** these are not part of symbol table stuff */
+bool returnType(Buffer *buffer)
 {
   switch (lookahead)
   {
@@ -190,18 +193,21 @@ bool voidType(Buffer *buffer)
     return true;
   }
 
-  return type(buffer);
+  return returnType(buffer);
 }
 
-bool parameter(Buffer *buffer)
+bool parameter(Buffer *buffer, ScopedSymbolTable *table)
 {
-  type(buffer);
-  parameterName(buffer);
+  ScopedSymbolTableEntry entry;
+  entry.kind = VK_ARG;
+
+  varType(buffer, &entry);
+  varNameIdentifier(buffer, table, &entry);
 
   return true;
 }
 
-bool additionalParameter(Buffer *buffer)
+bool additionalParameter(Buffer *buffer, ScopedSymbolTable *table)
 {
   if (lookahead != TK_COMMA)
   {
@@ -210,7 +216,7 @@ bool additionalParameter(Buffer *buffer)
 
   match(buffer, TK_COMMA);
   emitSymbol(",");
-  return parameter(buffer);
+  return parameter(buffer, table);
 }
 
 bool parameterList(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
@@ -220,9 +226,9 @@ bool parameterList(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
   if (isType(lookahead))
   {
     // we have a parameter list
-    parameter(buffer);
+    parameter(buffer, scopedSymbolTable);
 
-    while (additionalParameter(buffer))
+    while (additionalParameter(buffer, scopedSymbolTable))
       ;
   }
 
@@ -234,7 +240,7 @@ bool varDecDetails(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedS
 {
   // type varName (, varName)* ;
   varType(buffer, entry);
-  varName(buffer, scopedSymbolTable, entry);
+  varNameIdentifier(buffer, scopedSymbolTable, entry);
 
   while (additionalVarName(buffer, scopedSymbolTable, entry))
     ;
@@ -964,7 +970,7 @@ bool subroutineDec(Buffer *buffer)
   subroutineSymbolTable.entries = subroutineSymbolTableEntries;
 
   voidType(buffer);
-  identifier(buffer);
+  identifierSubroutine(buffer);
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
   parameterList(buffer, &subroutineSymbolTable);
@@ -994,7 +1000,7 @@ bool class(Buffer *buffer)
 
   tempval = tokenval;
   match(buffer, TK_IDENTIFIER);
-  emitIdentifier(symtable[tempval].lexptr);
+  emitIdentifierClass(symtable[tempval].lexptr);
 
   match(buffer, TK_BRACE_L);
   emitSymbol("{");
