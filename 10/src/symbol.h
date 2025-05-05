@@ -9,6 +9,12 @@ int insert(char s[], int tok, int value);
 
 /** scoped symbol table */
 
+typedef enum SymbolCategory {
+  SC_NONE,
+  SC_ClASS,
+  SC_SUBROUTINE,
+} SymbolCategory;
+
 typedef enum VariableKind {
   VK_STATIC,
   VK_FIELD,
@@ -46,5 +52,9 @@ void startSubroutine(ScopedSymbolTable *table);
 /** accepts global symbols and defines scoped symbols */
 void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind);
 int indexOf(ScopedSymbolTable *table, char *name);
+
+// two global symbol tables
+extern ScopedSymbolTable classSymbolTable;
+extern ScopedSymbolTable subroutineSymbolTable;
 
 #endif

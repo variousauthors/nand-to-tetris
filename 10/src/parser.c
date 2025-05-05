@@ -13,11 +13,14 @@
 Token lookahead;
 int currentAddress = 0;
 
+// two global symbol tables
+ScopedSymbolTable classSymbolTable;
+ScopedSymbolTable subroutineSymbolTable;
+
 #define TEMP_BASEADDR 5
 
 bool statements(Buffer *buffer);
 bool match(Buffer *buffer, Token t);
-bool aToken(Buffer *buffer);
 bool class(Buffer *buffer);
 bool expression(Buffer *buffer);
 bool functionCall(Buffer *buffer, char *subroutineName);
@@ -61,16 +64,9 @@ bool match(Buffer *buffer, Token t)
   return false;
 }
 
-bool identifierSubroutine(Buffer *buffer)
+bool identifierSubroutineDeclaration(Buffer *buffer)
 {
-  emitIdentifierSubroutine(identifierBuffer);
-  match(buffer, TK_IDENTIFIER);
-  return true;
-}
-
-bool identifier(Buffer *buffer)
-{
-  emitIdentifier(identifierBuffer);
+  emitIdentifierSubroutine(identifierBuffer, "declaration");
   match(buffer, TK_IDENTIFIER);
   return true;
 }
@@ -81,7 +77,7 @@ bool varNameIdentifier(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTab
   defineScopedSymbol(table, entry->name, entry->type, entry->kind);
 
   match(buffer, TK_IDENTIFIER);
-  emitIdentifierDefinition(identifierBuffer, table);
+  emitIdentifierSpecial(identifierBuffer, "declaration");
   return true;
 }
 
@@ -135,7 +131,7 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
     // emit first because the buffer will be overwritten
     // if the next token is also an identifier
     entry->type = &symtable[tokenval];
-    emitIdentifierType(identifierBuffer);
+    emitIdentifierClass(identifierBuffer, "reference");
     match(buffer, TK_IDENTIFIER);
     return true;
   }
@@ -173,7 +169,7 @@ bool returnType(Buffer *buffer)
   {
     // emit first because the buffer will be overwritten
     // if the next token is also an identifier
-    emitIdentifier(identifierBuffer);
+    emitIdentifierClass(identifierBuffer, "reference");
     match(buffer, TK_IDENTIFIER);
     return true;
   }
@@ -236,13 +232,13 @@ bool parameterList(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
   return true;
 }
 
-bool varDecDetails(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedSymbolTableEntry *entry)
+bool varDecDetails(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
 {
   // type varName (, varName)* ;
   varType(buffer, entry);
-  varNameIdentifier(buffer, scopedSymbolTable, entry);
+  varNameIdentifier(buffer, table, entry);
 
-  while (additionalVarName(buffer, scopedSymbolTable, entry))
+  while (additionalVarName(buffer, table, entry))
     ;
 
   match(buffer, TK_SEMI);
@@ -251,7 +247,7 @@ bool varDecDetails(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedS
   return true;
 }
 
-bool varDec(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
+bool varDec(Buffer *buffer, ScopedSymbolTable *table)
 {
   if (lookahead != TK_VAR)
   {
@@ -266,7 +262,7 @@ bool varDec(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
 
   entry.kind = VK_VAR;
 
-  varDecDetails(buffer, scopedSymbolTable, &entry);
+  varDecDetails(buffer, table, &entry);
 
   emitXMLCloseTag("varDec");
   return true;
@@ -465,12 +461,13 @@ bool term(Buffer *buffer)
   {
     // varName || varName[expression] || subroutineCall
     char *id = symtable[tokenval].lexptr;
+
     match(buffer, TK_IDENTIFIER);
 
     if (lookahead == TK_BRACKET_L)
     {
       // varName[expression]
-      emitIdentifier(id);
+      emitIdentifierSpecial(id, "reference");
 
       match(buffer, TK_BRACKET_L);
       emitSymbol("[");
@@ -489,7 +486,7 @@ bool term(Buffer *buffer)
     else
     {
       // varName
-      emitIdentifier(id);
+      emitIdentifierSpecial(id, "reference");
     }
 
     break;
@@ -637,7 +634,7 @@ bool expressionList(Buffer *buffer, bool isEmpty)
 bool functionCall(Buffer *buffer, char *subroutineName)
 {
   // subroutineName ( expressionList )
-  emitIdentifier(subroutineName);
+  emitIdentifierSubroutine(subroutineName, "reference");
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
 
@@ -656,9 +653,9 @@ bool methodCall(Buffer *buffer, char *subjectName)
   // (className | varName) . subroutineName ( expressionList )
   char *id2 = symtable[tokenval].lexptr;
 
-  emitIdentifier(subjectName);
+  emitIdentifierClass(subjectName, "reference");
   emitSymbol(".");
-  emitIdentifier(id2);
+  emitIdentifierSubroutine(id2, "reference");
   match(buffer, TK_IDENTIFIER);
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
@@ -798,7 +795,8 @@ bool letStatement(Buffer *buffer)
   emitXMLOpenTag("letStatement");
   emitKeyword("let");
 
-  identifier(buffer);
+  emitIdentifierSpecial(identifierBuffer, "reference");
+  match(buffer, TK_IDENTIFIER);
 
   if (lookahead == TK_BRACKET_L)
   {
@@ -887,7 +885,7 @@ bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
   return true;
 }
 
-bool classVarDec(Buffer *buffer, ScopedSymbolTable *classSymbolTable)
+bool classVarDec(Buffer *buffer)
 {
   if (lookahead != TK_STATIC && lookahead != TK_FIELD)
   {
@@ -906,7 +904,7 @@ bool classVarDec(Buffer *buffer, ScopedSymbolTable *classSymbolTable)
     match(buffer, TK_STATIC);
     emitKeyword("static");
     entry.kind = VK_STATIC;
-    varDecDetails(buffer, classSymbolTable, &entry);
+    varDecDetails(buffer, &classSymbolTable, &entry);
 
     break;
   }
@@ -915,7 +913,7 @@ bool classVarDec(Buffer *buffer, ScopedSymbolTable *classSymbolTable)
     match(buffer, TK_FIELD);
     emitKeyword("field");
     entry.kind = VK_FIELD;
-    varDecDetails(buffer, classSymbolTable, &entry);
+    varDecDetails(buffer, &classSymbolTable, &entry);
 
     break;
   }
@@ -966,11 +964,11 @@ bool subroutineDec(Buffer *buffer)
   }
 
   ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
-  ScopedSymbolTable subroutineSymbolTable = {0};
   subroutineSymbolTable.entries = subroutineSymbolTableEntries;
+  startSubroutine(&subroutineSymbolTable);
 
   voidType(buffer);
-  identifierSubroutine(buffer);
+  identifierSubroutineDeclaration(buffer);
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
   parameterList(buffer, &subroutineSymbolTable);
@@ -988,7 +986,6 @@ bool class(Buffer *buffer)
   int tempval;
 
   ScopedSymbolTableEntry classSymbolTableEntries[10];
-  ScopedSymbolTable classSymbolTable = {0};
   classSymbolTable.entries = classSymbolTableEntries;
 
   // class className { classVarDec* subroutineDec* }
@@ -1000,12 +997,12 @@ bool class(Buffer *buffer)
 
   tempval = tokenval;
   match(buffer, TK_IDENTIFIER);
-  emitIdentifierClass(symtable[tempval].lexptr);
+  emitIdentifierClass(symtable[tempval].lexptr, "declaration");
 
   match(buffer, TK_BRACE_L);
   emitSymbol("{");
 
-  while (classVarDec(buffer, &classSymbolTable))
+  while (classVarDec(buffer))
     ;
   while (subroutineDec(buffer))
     ;
@@ -1016,151 +1013,4 @@ bool class(Buffer *buffer)
   emitClassClose();
 
   return true;
-}
-
-bool aToken(Buffer *buffer)
-{
-  switch (lookahead)
-  {
-  case TK_CLASS:
-  case TK_CONSTRUCTOR:
-  case TK_FUNCTION:
-  case TK_METHOD:
-  case TK_FIELD:
-  case TK_STATIC:
-  case TK_VAR:
-  case TK_INT:
-  case TK_CHAR:
-  case TK_BOOLEAN:
-  case TK_VOID:
-  case TK_TRUE:
-  case TK_FALSE:
-  case TK_NULL:
-  case TK_THIS:
-  case TK_LET:
-  case TK_DO:
-  case TK_IF:
-  case TK_ELSE:
-  case TK_WHILE:
-  case TK_RETURN:
-  {
-    emitKeyword(symtable[tokenval].lexptr);
-    return match(buffer, lookahead);
-  }
-  case TK_IDENTIFIER:
-  {
-    emitXMLPrimitive("identifier", symtable[tokenval].lexptr);
-    return match(buffer, lookahead);
-  }
-  case TK_BRACE_L:
-  {
-    emitXMLPrimitive("symbol", "{");
-    return match(buffer, lookahead);
-  }
-  case TK_BRACE_R:
-  {
-    emitXMLPrimitive("symbol", "}");
-    return match(buffer, lookahead);
-  }
-  case TK_PAREN_L:
-  {
-    emitXMLPrimitive("symbol", "(");
-    return match(buffer, lookahead);
-  }
-  case TK_PAREN_R:
-  {
-    emitXMLPrimitive("symbol", ")");
-    return match(buffer, lookahead);
-  }
-  case TK_BRACKET_L:
-  {
-    emitXMLPrimitive("symbol", "[");
-    return match(buffer, lookahead);
-  }
-  case TK_BRACKET_R:
-  {
-    emitXMLPrimitive("symbol", "]");
-    return match(buffer, lookahead);
-  }
-  case TK_DOT:
-  {
-    emitXMLPrimitive("symbol", ".");
-    return match(buffer, lookahead);
-  }
-  case TK_COMMA:
-  {
-    emitXMLPrimitive("symbol", ",");
-    return match(buffer, lookahead);
-  }
-  case TK_SEMI:
-  {
-    emitXMLPrimitive("symbol", ";");
-    return match(buffer, lookahead);
-  }
-  case TK_PLUS:
-  {
-    emitXMLPrimitive("symbol", "+");
-    return match(buffer, lookahead);
-  }
-  case TK_MINUS:
-  {
-    emitXMLPrimitive("symbol", "-");
-    return match(buffer, lookahead);
-  }
-  case TK_ASTERISK:
-  {
-    emitXMLPrimitive("symbol", "*");
-    return match(buffer, lookahead);
-  }
-  case TK_SLASH:
-  {
-    emitXMLPrimitive("symbol", "/");
-    return match(buffer, lookahead);
-  }
-  case TK_AMP:
-  {
-    emitXMLPrimitive("symbol", "&amp;");
-    return match(buffer, lookahead);
-  }
-  case TK_BAR:
-  {
-    emitXMLPrimitive("symbol", "|");
-    return match(buffer, lookahead);
-  }
-  case TK_ANGLE_BRACKET_L:
-  {
-    emitXMLPrimitive("symbol", "&lt;");
-    return match(buffer, lookahead);
-  }
-  case TK_ANGLE_BRACKET_R:
-  {
-    emitXMLPrimitive("symbol", "&gt;");
-    return match(buffer, lookahead);
-  }
-  case TK_EQUAL:
-  {
-    emitXMLPrimitive("symbol", "=");
-    return match(buffer, lookahead);
-  }
-  case TK_TILDE:
-  {
-    emitXMLPrimitive("symbol", "~");
-    return match(buffer, lookahead);
-  }
-  case TK_STRING:
-  {
-    emitXMLPrimitive("stringConstant", identifierBuffer);
-    return match(buffer, lookahead);
-  }
-  case TK_INTEGER:
-  {
-    emitXMLPrimitiveInteger("integerConstant", tokenval);
-    return match(buffer, lookahead);
-  }
-  default:
-    fprintf(stderr, "token: %d\n", lookahead);
-    error("encountered unrecognized token");
-    break;
-  }
-  return false;
 }

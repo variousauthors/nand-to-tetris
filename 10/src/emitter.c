@@ -137,31 +137,22 @@ void emitIdentifier(char *identifier)
   emitXMLPrimitive("identifier", identifier);
 }
 
-void emitIdentifierType(char *identifier)
+void emitIdentifierClass(char *identifier, char *mode)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   // output "declaration" as opposed to "reference"
-  printf("%s<identifier category=\"type\" mode=\"reference\"> %s </identifier>\n", indentation, identifier);
+  printf("%s<identifier category=\"class\" mode=\"%s\"> %s </identifier>\n", indentation, mode, identifier);
 }
 
-void emitIdentifierClass(char *identifier)
+void emitIdentifierSubroutine(char *identifier, char *mode)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   // output "declaration" as opposed to "reference"
-  printf("%s<identifier category=\"class\" mode=\"declaration\"> %s </identifier>\n", indentation, identifier);
-}
-
-void emitIdentifierSubroutine(char *identifier)
-{
-  char indentation[indentSize(indent)];
-  makeIndentation(indentation);
-
-  // output "declaration" as opposed to "reference"
-  printf("%s<identifier category=\"subroutine\" mode=\"declaration\"> %s </identifier>\n", indentation, identifier);
+  printf("%s<identifier category=\"subroutine\" mode=\"%s\"> %s </identifier>\n", indentation, mode, identifier);
 }
 
 char *getCategory(VariableKind kind)
@@ -181,40 +172,46 @@ char *getCategory(VariableKind kind)
   }
 }
 
-void emitIdentifierDefinition(char *identifier, ScopedSymbolTable *table)
+ScopedSymbolTableEntry *getIndexFromGlobalTables(char *identifier)
 {
-  int index = indexOf(table, identifier);
+  // first check the subroutine table
+  int index;
 
-  if (index < 0)
+  index = indexOf(&subroutineSymbolTable, identifier);
+
+  if (index >= 0)
   {
-    fprintf(stderr, "could not find %s in scoped symbol table\n", identifier);
-    error("while emitting identifier definition");
+    return &subroutineSymbolTable.entries[index];
   }
 
-  ScopedSymbolTableEntry entry = table->entries[index];
+  index = indexOf(&classSymbolTable, identifier);
 
-  char indentation[indentSize(indent)];
-  makeIndentation(indentation);
+  if (index >= 0)
+  {
+    return &classSymbolTable.entries[index];
+  }
 
-  // output "declaration" as opposed to "reference"
-  printf("%s<identifier category=\"%s\" position=\"%d\" mode=\"declaration\"> %s </identifier>\n", indentation, getCategory(entry.kind), entry.position, entry.name->lexptr);
+  return 0;
 }
 
-void emitIdentifierReference(char *identifier, ScopedSymbolTable *table)
+void emitIdentifierSpecial(char *identifier, char *mode)
 {
-  int index = indexOf(table, identifier);
-
-  if (index < 0)
-  {
-    fprintf(stderr, "could not find %s in scoped symbol table\n", identifier);
-    error("while emitting identifier definition");
-  }
-
-  ScopedSymbolTableEntry entry = table->entries[index];
-
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  // output "declaration" as opposed to "reference"
-  printf("%s<identifier category=\"%s\" position=\"%d\" mode=\"reference\"> %s </identifier>\n", indentation, getCategory(entry.kind), entry.position, entry.name->lexptr);
+  // first check the subroutine table
+  ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(identifier);
+
+  if (entry == 0)
+  {
+    // it might be a class or subroutine
+    int index = lookup(identifier);
+
+    fprintf(stderr, "encountered unidentified symbol %s\n", identifier);
+    error("while emitting identifier definition");
+  }
+  else
+  {
+    printf("%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, mode, entry->name->lexptr);
+  }
 }

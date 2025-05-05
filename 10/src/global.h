@@ -27,6 +27,7 @@ extern int tokenval;
 extern int lineno;
 extern int currentAddress;
 
+
 typedef struct entry
 {
   char *lexptr;
