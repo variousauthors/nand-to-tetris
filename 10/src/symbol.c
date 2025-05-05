@@ -64,7 +64,7 @@ void startSubroutine(ScopedSymbolTable *table) {
   table->nextVar = 0;
 }
 
-void define(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind) {
+void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind) {
   // TODO bounds checking on the underlying array
 
   table->entries[table->currentIndex].name = name;
@@ -94,7 +94,21 @@ void define(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kin
     break;
   }
   default:
-    error("tried to add unrecognized kind to scoped symbol table");
+    fprintf(stderr, "tried to add symbol of kind %d\n", kind);
+    error("while defining a scoped symbol");
     break;
   }
+
+  table->currentIndex++;
+  table->length++;
+}
+
+int indexOf(ScopedSymbolTable *table, char *name) {
+  for (int i = 0; i < table->length; i++) {
+    if (strcmp(name, table->entries[i].name->lexptr) == 0) {
+      return i;
+    }
+  }
+
+  return -1;
 }

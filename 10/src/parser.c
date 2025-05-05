@@ -73,9 +73,14 @@ bool parameterName(Buffer *buffer)
   return identifier(buffer);
 }
 
-bool varName(Buffer *buffer, ScopedSymbolTableEntry *entry)
+bool varName(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
 {
-  return identifier(buffer);
+  entry->name = &symtable[tokenval];
+  defineScopedSymbol(table, entry->name, entry->type, entry->kind);
+
+  match(buffer, TK_IDENTIFIER);
+  emitIdentifierDefinition(identifierBuffer, table);
+  return true;
 }
 
 bool additionalVarName(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedSymbolTableEntry *entry)
@@ -88,7 +93,9 @@ bool additionalVarName(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, Sco
   match(buffer, TK_COMMA);
   emitSymbol(",");
 
-  return identifier(buffer);
+  varName(buffer, scopedSymbolTable, entry);
+
+  return true;
 }
 
 bool isType(Token lookahead)
@@ -102,18 +109,21 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
   {
   case TK_INT:
   {
+    entry->type = &symtable[tokenval];
     match(buffer, TK_INT);
     emitXMLPrimitive("keyword", "int");
     return true;
   }
   case TK_CHAR:
   {
+    entry->type = &symtable[tokenval];
     match(buffer, TK_CHAR);
     emitXMLPrimitive("keyword", "char");
     return true;
   }
   case TK_BOOLEAN:
   {
+    entry->type = &symtable[tokenval];
     match(buffer, TK_BOOLEAN);
     emitXMLPrimitive("keyword", "boolean");
     return true;
@@ -122,6 +132,7 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
   {
     // emit first because the buffer will be overwritten
     // if the next token is also an identifier
+    entry->type = &symtable[tokenval];
     emitIdentifier(identifierBuffer);
     match(buffer, TK_IDENTIFIER);
     return true;
@@ -202,7 +213,7 @@ bool additionalParameter(Buffer *buffer)
   return parameter(buffer);
 }
 
-bool parameterList(Buffer *buffer)
+bool parameterList(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
 {
   emitXMLOpenTag("parameterList");
 
@@ -223,7 +234,7 @@ bool varDecDetails(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedS
 {
   // type varName (, varName)* ;
   varType(buffer, entry);
-  varName(buffer, entry);
+  varName(buffer, scopedSymbolTable, entry);
 
   while (additionalVarName(buffer, scopedSymbolTable, entry))
     ;
@@ -246,6 +257,8 @@ bool varDec(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
   match(buffer, TK_VAR);
   emitXMLOpenTag("varDec");
   emitKeyword("var");
+
+  entry.kind = VK_VAR;
 
   varDecDetails(buffer, scopedSymbolTable, &entry);
 
@@ -918,10 +931,6 @@ bool subroutineDec(Buffer *buffer)
     return false;
   }
 
-  ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
-  ScopedSymbolTable subroutineSymbolTable = {0};
-  subroutineSymbolTable.entries = subroutineSymbolTableEntries;
-
   emitXMLOpenTag("subroutineDec");
 
   switch (lookahead)
@@ -950,11 +959,15 @@ bool subroutineDec(Buffer *buffer)
     return false;
   }
 
+  ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
+  ScopedSymbolTable subroutineSymbolTable = {0};
+  subroutineSymbolTable.entries = subroutineSymbolTableEntries;
+
   voidType(buffer);
   identifier(buffer);
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
-  parameterList(buffer);
+  parameterList(buffer, &subroutineSymbolTable);
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
   subroutineBody(buffer, &subroutineSymbolTable);

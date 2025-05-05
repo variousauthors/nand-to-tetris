@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "emitter.h"
+#include "error.h"
 #include <sys/syslimits.h>
 #include <_stdio.h>
 
@@ -113,11 +114,13 @@ void emitSymbol(char *symbol)
       emitXMLPrimitive("symbol", "&amp;");
       return;
     }
-    case '<': {
+    case '<':
+    {
       emitXMLPrimitive("symbol", "&lt;");
       return;
     }
-    case '>': {
+    case '>':
+    {
       emitXMLPrimitive("symbol", "&gt;");
       return;
     }
@@ -132,4 +135,59 @@ void emitSymbol(char *symbol)
 void emitIdentifier(char *identifier)
 {
   emitXMLPrimitive("identifier", identifier);
+}
+
+char *getCategory(VariableKind kind)
+{
+  switch (kind)
+  {
+  case VK_STATIC:
+    return "static";
+  case VK_FIELD:
+    return "field";
+  case VK_ARG:
+    return "argument";
+  case VK_VAR:
+    return "var";
+  default:
+    break;
+  }
+}
+
+void emitIdentifierDefinition(char *identifier, ScopedSymbolTable *table)
+{
+  int index = indexOf(table, identifier);
+
+  if (index < 0)
+  {
+    fprintf(stderr, "could not find %s in scoped symbol table\n", identifier);
+    error("while emitting identifier definition");
+  }
+
+  ScopedSymbolTableEntry entry = table->entries[index];
+
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // output "declaration" as opposed to "reference"
+  printf("%s<identifier category=\"%s\" position=\"%d\" mode=\"declaration\"> %s </identifier>\n", indentation, getCategory(entry.kind), entry.position, entry.name->lexptr);
+}
+
+void emitIdentifierReference(char *identifier, ScopedSymbolTable *table)
+{
+  int index = indexOf(table, identifier);
+
+  if (index < 0)
+  {
+    fprintf(stderr, "could not find %s in scoped symbol table\n", identifier);
+    error("while emitting identifier definition");
+  }
+
+  ScopedSymbolTableEntry entry = table->entries[index];
+
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // output "declaration" as opposed to "reference"
+  printf("%s<identifier category=\"%s\" position=\"%d\" mode=\"reference\"> %s </identifier>\n", indentation, getCategory(entry.kind), entry.position, entry.name->lexptr);
 }

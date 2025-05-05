@@ -44,6 +44,7 @@ typedef struct ScopedSymbolTable
 void startSubroutine(ScopedSymbolTable *table);
 
 /** accepts global symbols and defines scoped symbols */
-void define(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind);
+void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind);
+int indexOf(ScopedSymbolTable *table, char *name);
 
 #endif

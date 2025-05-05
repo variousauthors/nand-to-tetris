@@ -15,6 +15,7 @@ void emitClassOpen ();
 void emitClassClose ();
 void emitKeyword(char *keyword);
 void emitIdentifier(char *identifier);
+void emitIdentifierDefinition(char *identifier, ScopedSymbolTable *table);
 void emitSymbol(char *symbol);
 void emitSubroutineBodyOpen ();
 void emitSubroutineBodyClose ();
