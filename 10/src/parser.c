@@ -8,7 +8,6 @@
 #include "error.h"
 #include "tokenizer.h"
 #include "parser.h"
-#include "global.h"
 #include "emitter.h"
 
 Token lookahead;
@@ -36,9 +35,6 @@ int parse(FILE *file)
   initBuffer(&buffer, data, file);
   lookahead = nextToken(&buffer);
 
-  IR ir = {0};
-  ir.nodes = malloc(sizeof(IRNode) * IR_SIZE);
-  ir.current = 0;
   lineno = 1;
 
   while (lookahead != TK_EOF && class(&buffer))
@@ -72,12 +68,17 @@ bool identifier(Buffer *buffer)
   return true;
 }
 
-bool varName(Buffer *buffer)
+bool parameterName(Buffer *buffer)
 {
   return identifier(buffer);
 }
 
-bool additionalVarName(Buffer *buffer)
+bool varName(Buffer *buffer, ScopedSymbolTableEntry *entry)
+{
+  return identifier(buffer);
+}
+
+bool additionalVarName(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedSymbolTableEntry *entry)
 {
   if (lookahead != TK_COMMA)
   {
@@ -93,6 +94,43 @@ bool additionalVarName(Buffer *buffer)
 bool isType(Token lookahead)
 {
   return lookahead == TK_INT || lookahead == TK_CHAR || lookahead == TK_BOOLEAN || lookahead == TK_IDENTIFIER;
+}
+
+bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
+{
+  switch (lookahead)
+  {
+  case TK_INT:
+  {
+    match(buffer, TK_INT);
+    emitXMLPrimitive("keyword", "int");
+    return true;
+  }
+  case TK_CHAR:
+  {
+    match(buffer, TK_CHAR);
+    emitXMLPrimitive("keyword", "char");
+    return true;
+  }
+  case TK_BOOLEAN:
+  {
+    match(buffer, TK_BOOLEAN);
+    emitXMLPrimitive("keyword", "boolean");
+    return true;
+  }
+  case TK_IDENTIFIER:
+  {
+    // emit first because the buffer will be overwritten
+    // if the next token is also an identifier
+    emitIdentifier(identifierBuffer);
+    match(buffer, TK_IDENTIFIER);
+    return true;
+  }
+  default:
+    fprintf(stderr, "expected int | char | boolean | classname but got %d\n", lookahead);
+    error("error while parsing type");
+    return false;
+  }
 }
 
 bool type(Buffer *buffer)
@@ -147,7 +185,7 @@ bool voidType(Buffer *buffer)
 bool parameter(Buffer *buffer)
 {
   type(buffer);
-  varName(buffer);
+  parameterName(buffer);
 
   return true;
 }
@@ -181,13 +219,13 @@ bool parameterList(Buffer *buffer)
   return true;
 }
 
-bool varDecDetails(Buffer *buffer)
+bool varDecDetails(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedSymbolTableEntry *entry)
 {
   // type varName (, varName)* ;
-  type(buffer);
-  varName(buffer);
+  varType(buffer, entry);
+  varName(buffer, entry);
 
-  while (additionalVarName(buffer))
+  while (additionalVarName(buffer, scopedSymbolTable, entry))
     ;
 
   match(buffer, TK_SEMI);
@@ -196,18 +234,20 @@ bool varDecDetails(Buffer *buffer)
   return true;
 }
 
-bool varDec(Buffer *buffer)
+bool varDec(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
 {
   if (lookahead != TK_VAR)
   {
     return false;
   }
 
+  ScopedSymbolTableEntry entry;
+
   match(buffer, TK_VAR);
   emitXMLOpenTag("varDec");
   emitKeyword("var");
 
-  varDecDetails(buffer);
+  varDecDetails(buffer, scopedSymbolTable, &entry);
 
   emitXMLCloseTag("varDec");
   return true;
@@ -812,12 +852,12 @@ bool statements(Buffer *buffer)
   return true;
 }
 
-bool subroutineBody(Buffer *buffer)
+bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
 {
   match(buffer, TK_BRACE_L);
   emitSubroutineBodyOpen();
 
-  while (varDec(buffer))
+  while (varDec(buffer, scopedSymbolTable))
     ;
 
   statements(buffer);
@@ -828,12 +868,15 @@ bool subroutineBody(Buffer *buffer)
   return true;
 }
 
-bool classVarDec(Buffer *buffer)
+bool classVarDec(Buffer *buffer, ScopedSymbolTable *classSymbolTable)
 {
   if (lookahead != TK_STATIC && lookahead != TK_FIELD)
   {
     return false;
   }
+
+  // initialize an entry for one or more declarations
+  ScopedSymbolTableEntry entry;
 
   emitXMLOpenTag("classVarDec");
 
@@ -843,12 +886,18 @@ bool classVarDec(Buffer *buffer)
   {
     match(buffer, TK_STATIC);
     emitKeyword("static");
+    entry.kind = VK_STATIC;
+    varDecDetails(buffer, classSymbolTable, &entry);
+
     break;
   }
   case TK_FIELD:
   {
     match(buffer, TK_FIELD);
     emitKeyword("field");
+    entry.kind = VK_FIELD;
+    varDecDetails(buffer, classSymbolTable, &entry);
+
     break;
   }
   default:
@@ -856,8 +905,6 @@ bool classVarDec(Buffer *buffer)
     error("error while parsing class variable declaration");
     return false;
   }
-
-  varDecDetails(buffer);
 
   emitXMLCloseTag("classVarDec");
 
@@ -870,6 +917,10 @@ bool subroutineDec(Buffer *buffer)
   {
     return false;
   }
+
+  ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
+  ScopedSymbolTable subroutineSymbolTable = {0};
+  subroutineSymbolTable.entries = subroutineSymbolTableEntries;
 
   emitXMLOpenTag("subroutineDec");
 
@@ -906,7 +957,7 @@ bool subroutineDec(Buffer *buffer)
   parameterList(buffer);
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
-  subroutineBody(buffer);
+  subroutineBody(buffer, &subroutineSymbolTable);
 
   emitXMLCloseTag("subroutineDec");
 
@@ -916,6 +967,10 @@ bool subroutineDec(Buffer *buffer)
 bool class(Buffer *buffer)
 {
   int tempval;
+
+  ScopedSymbolTableEntry classSymbolTableEntries[10];
+  ScopedSymbolTable classSymbolTable = {0};
+  classSymbolTable.entries = classSymbolTableEntries;
 
   // class className { classVarDec* subroutineDec* }
 
@@ -931,7 +986,7 @@ bool class(Buffer *buffer)
   match(buffer, TK_BRACE_L);
   emitSymbol("{");
 
-  while (classVarDec(buffer))
+  while (classVarDec(buffer, &classSymbolTable))
     ;
   while (subroutineDec(buffer))
     ;

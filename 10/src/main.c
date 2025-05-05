@@ -8,7 +8,6 @@
 #include "parser.h"
 #include "init.h"
 #include "emitter.h"
-#include "global.h"
 #include <sys/syslimits.h>
 
 char *currentFile;

@@ -1,3 +1,10 @@
+#include "symbol.h"
+
+// two scoped symbol tables to store representation details
+
+extern ScopedSymbolTable classSymbolTable;
+extern ScopedSymbolTable subroutineSymbolTable;
+
 void emitXMLOpenTag(char* tag);
 void emitXMLCloseTag(char* tag);
 void emitXMLSelfClosingTag(char* tag);

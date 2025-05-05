@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "emitter.h"
-#include "global.h"
 #include <sys/syslimits.h>
 #include <_stdio.h>
 
