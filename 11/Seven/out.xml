@@ -1,0 +1,51 @@
+<class>
+  <keyword> class </keyword>
+  <identifier category="class" mode="declaration"> Main </identifier>
+  <symbol> { </symbol>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> void </keyword>
+    <identifier category="subroutine" mode="declaration"> main </identifier>
+    <symbol> ( </symbol>
+    <parameterList>
+    </parameterList>
+    <symbol> ) </symbol>
+    <subroutineBody>
+      <symbol> { </symbol>
+      <statements>
+        <doStatement>
+          <keyword> do </keyword>
+          <expressionList>
+            <expression>
+              <term>
+push constant 1
+              </term>
+              <term>
+                <symbol> ( </symbol>
+                <expression>
+                  <term>
+push constant 2
+                  </term>
+                  <term>
+push constant 3
+                  </term>
+call Math.multiply 2
+                </expression>
+                <symbol> ) </symbol>
+              </term>
+sub
+            </expression>
+          </expressionList>
+call Output.printInt 1
+          <symbol> ; </symbol>
+        </doStatement>
+        <returnStatement>
+          <keyword> return </keyword>
+          <symbol> ; </symbol>
+        </returnStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <symbol> } </symbol>
+</class>

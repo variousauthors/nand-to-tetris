@@ -112,3 +112,15 @@ int indexOf(ScopedSymbolTable *table, char *name) {
 
   return -1;
 }
+
+int varCount(ScopedSymbolTable *table, VariableKind kind) {
+  int count;
+
+  for (int i = 0; i < table->length; i++) {
+    if (table->entries[i].kind) {
+      count++;
+    }
+  }
+
+  return count;
+}

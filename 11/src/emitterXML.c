@@ -2,7 +2,7 @@
 /** register D will get the value baseaddr + offset for the given segment */
 #include <stdio.h>
 #include <stdbool.h>
-#include "emitter.h"
+#include "emitterXML.h"
 #include "error.h"
 #include <sys/syslimits.h>
 #include <_stdio.h>

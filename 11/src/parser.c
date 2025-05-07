@@ -8,7 +8,8 @@
 #include "error.h"
 #include "tokenizer.h"
 #include "parser.h"
-#include "emitter.h"
+#include "emitterXML.h"
+#include "emitterVM.h"
 
 Token lookahead;
 int currentAddress = 0;
@@ -309,7 +310,7 @@ bool term(Buffer *buffer)
   case TK_INTEGER:
   {
     // emit first because tokenval gets clobbered
-    emitXMLPrimitiveInteger("integerConstant", tokenval);
+    emitConstant(tokenval);
     match(buffer, TK_INTEGER);
     break;
   }
@@ -579,8 +580,79 @@ bool opTerm(Buffer *buffer)
     return false;
   }
 
-  op(buffer);
-  return term(buffer);
+  // we must output the next term before the op
+  switch (lookahead)
+  {
+  case TK_PLUS:
+  {
+    match(buffer, TK_PLUS);
+    term(buffer);
+    emitOperation('+');
+    break;
+  }
+  case TK_MINUS:
+  {
+    match(buffer, TK_MINUS);
+    term(buffer);
+    emitOperation('-');
+    break;
+  }
+  case TK_ASTERISK:
+  {
+    match(buffer, TK_ASTERISK);
+    term(buffer);
+    emitOperation('*');
+    break;
+  }
+  case TK_SLASH:
+  {
+    match(buffer, TK_SLASH);
+    term(buffer);
+    emitOperation('/');
+    break;
+  }
+  case TK_AMP:
+  {
+    match(buffer, TK_AMP);
+    term(buffer);
+    emitOperation('&');
+    break;
+  }
+  case TK_BAR:
+  {
+    match(buffer, TK_BAR);
+    term(buffer);
+    emitOperation('|');
+    break;
+  }
+  case TK_ANGLE_BRACKET_L:
+  {
+    match(buffer, TK_ANGLE_BRACKET_L);
+    term(buffer);
+    emitOperation('<');
+    break;
+  }
+  case TK_ANGLE_BRACKET_R:
+  {
+    match(buffer, TK_ANGLE_BRACKET_R);
+    term(buffer);
+    emitOperation('>');
+    break;
+  }
+  case TK_EQUAL:
+  {
+    match(buffer, TK_EQUAL);
+    term(buffer);
+    emitOperation('=');
+    break;
+  }
+  default:
+    fprintf(stderr, "expected binary operator got %d\n", lookahead);
+    error("error while parsing op");
+    return false;
+  }
+
+  return true;
 }
 
 bool expression(Buffer *buffer)
@@ -611,9 +683,11 @@ bool additionalExpressions(Buffer *buffer)
   return expression(buffer);
 }
 
-bool expressionList(Buffer *buffer, bool isEmpty)
+int expressionList(Buffer *buffer, bool isEmpty)
 {
   emitXMLOpenTag("expressionList");
+
+  int count = 0; // the number of expressions we encounter
 
   // expression and term have no way to express "emptiness"
   // so the caller will need to have the context to know
@@ -622,13 +696,15 @@ bool expressionList(Buffer *buffer, bool isEmpty)
   if (!isEmpty)
   {
     expression(buffer);
-    while (additionalExpressions(buffer))
-      ;
+    count++;
+    while (additionalExpressions(buffer)) {
+      count++;
+    }
   }
 
   emitXMLCloseTag("expressionList");
 
-  return true;
+  return count;
 }
 
 bool functionCall(Buffer *buffer, char *subroutineName)
@@ -646,24 +722,23 @@ bool functionCall(Buffer *buffer, char *subroutineName)
   return true;
 }
 
-bool methodCall(Buffer *buffer, char *subjectName)
+bool methodCall(Buffer *buffer, char *objectName)
 {
   // ( className | varName ) . subroutineName ( expressionList )
   match(buffer, TK_DOT);
   // (className | varName) . subroutineName ( expressionList )
   char *id2 = symtable[tokenval].lexptr;
 
-  emitIdentifierClass(subjectName, "reference");
-  emitSymbol(".");
-  emitIdentifierSubroutine(id2, "reference");
   match(buffer, TK_IDENTIFIER);
   match(buffer, TK_PAREN_L);
-  emitSymbol("(");
 
-  expressionList(buffer, lookahead == TK_PAREN_R);
+  // needs to return how many expressions it counted
+  int argc = expressionList(buffer, lookahead == TK_PAREN_R);
+
+  emitMethodCall(objectName, id2, argc);
+  // call Class.method n
 
   match(buffer, TK_PAREN_R);
-  emitSymbol(")");
 
   return true;
 }
