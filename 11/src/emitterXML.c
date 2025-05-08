@@ -9,17 +9,17 @@
 
 #define TEMP_BASEADDR 5
 
-int indent = 0;
-int MAX_INDENT = 128;
-int SPACES = 2;
+static int indent = 0;
+static const int MAX_INDENT = 128;
+static const int SPACES = 2;
 
 /** returns a size appropriate for indentation whitespace */
-int indentSize(int indent)
+static int indentSize(int indent)
 {
   return indent * SPACES + 1;
 }
 
-void makeIndentation(char *indentation)
+static void makeIndentation(char *indentation)
 {
   int i = 0;
   for (; i < indent * SPACES && i < MAX_INDENT; i++)

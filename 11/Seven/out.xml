@@ -5,43 +5,40 @@
   <subroutineDec>
     <keyword> function </keyword>
     <keyword> void </keyword>
-    <identifier category="subroutine" mode="declaration"> main </identifier>
     <symbol> ( </symbol>
     <parameterList>
     </parameterList>
     <symbol> ) </symbol>
+function Main.main 0
     <subroutineBody>
       <symbol> { </symbol>
       <statements>
         <doStatement>
-          <keyword> do </keyword>
           <expressionList>
             <expression>
               <term>
-push constant 1
+  push constant 1
               </term>
               <term>
-                <symbol> ( </symbol>
                 <expression>
                   <term>
-push constant 2
+  push constant 2
                   </term>
                   <term>
-push constant 3
+  push constant 3
                   </term>
-call Math.multiply 2
+  call Math.multiply 2
                 </expression>
-                <symbol> ) </symbol>
               </term>
-sub
+  sub
             </expression>
           </expressionList>
-call Output.printInt 1
-          <symbol> ; </symbol>
+  call Output.printInt 1
+  pop temp 0
         </doStatement>
         <returnStatement>
-          <keyword> return </keyword>
-          <symbol> ; </symbol>
+  push constant 0
+  return
         </returnStatement>
       </statements>
       <symbol> } </symbol>

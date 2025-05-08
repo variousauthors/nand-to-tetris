@@ -144,7 +144,7 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
 }
 
 /** these are not part of symbol table stuff */
-bool returnType(Buffer *buffer)
+bool nonVoidReturnType(Buffer *buffer)
 {
   switch (lookahead)
   {
@@ -181,7 +181,7 @@ bool returnType(Buffer *buffer)
   }
 }
 
-bool voidType(Buffer *buffer)
+bool returnType(Buffer *buffer)
 {
   if (lookahead == TK_VOID)
   {
@@ -190,7 +190,7 @@ bool voidType(Buffer *buffer)
     return true;
   }
 
-  return returnType(buffer);
+  return nonVoidReturnType(buffer);
 }
 
 bool parameter(Buffer *buffer, ScopedSymbolTable *table)
@@ -326,10 +326,8 @@ bool term(Buffer *buffer)
   {
     // ( expression )
     match(buffer, TK_PAREN_L);
-    emitSymbol("(");
     expression(buffer);
     match(buffer, TK_PAREN_R);
-    emitSymbol(")");
     break;
   }
   case TK_CLASS:
@@ -697,7 +695,8 @@ int expressionList(Buffer *buffer, bool isEmpty)
   {
     expression(buffer);
     count++;
-    while (additionalExpressions(buffer)) {
+    while (additionalExpressions(buffer))
+    {
       count++;
     }
   }
@@ -799,10 +798,12 @@ bool doStatement(Buffer *buffer)
   match(buffer, TK_DO);
 
   emitXMLOpenTag("doStatement");
-  emitKeyword("do");
   subroutineCall(buffer);
+
+  // the do statement is used to invoke void functions
+  // so we have to clean up the stack after the return
+  emitVoidFunctionCleanup();
   match(buffer, TK_SEMI);
-  emitSymbol(";");
   emitXMLCloseTag("doStatement");
 
   return true;
@@ -813,15 +814,19 @@ bool returnStatement(Buffer *buffer)
   match(buffer, TK_RETURN);
 
   emitXMLOpenTag("returnStatement");
-  emitKeyword("return");
 
   if (lookahead != TK_SEMI)
   {
     expression(buffer);
   }
+  else
+  {
+    emitVoidReturnValue();
+  }
+
+  emitReturn();
 
   match(buffer, TK_SEMI);
-  emitSymbol(";");
   emitXMLCloseTag("returnStatement");
 
   return true;
@@ -1012,24 +1017,69 @@ bool subroutineDec(Buffer *buffer)
 
   emitXMLOpenTag("subroutineDec");
 
+  ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
+  subroutineSymbolTable.entries = subroutineSymbolTableEntries;
+  startSubroutine(&subroutineSymbolTable);
+
   switch (lookahead)
   {
   case TK_FUNCTION:
   {
     match(buffer, TK_FUNCTION);
     emitKeyword("function");
+    returnType(buffer);
+    char *functionName = symtable[tokenval].lexptr;
+    match(buffer, TK_IDENTIFIER);
+    match(buffer, TK_PAREN_L);
+    emitSymbol("(");
+    parameterList(buffer, &subroutineSymbolTable);
+    match(buffer, TK_PAREN_R);
+    emitSymbol(")");
+    emitFunctionDeclaration(currentFile, functionName, subroutineSymbolTable.length);
+    subroutineBody(buffer, &subroutineSymbolTable);
+
     break;
   }
   case TK_CONSTRUCTOR:
   {
+    // needs to allocate memory for the instance
+    // and return it
     match(buffer, TK_CONSTRUCTOR);
     emitKeyword("constructor");
+    returnType(buffer);
+    emitIdentifierSubroutine(identifierBuffer, "declaration");
+    char *functionName = symtable[tokenval].lexptr;
+    match(buffer, TK_IDENTIFIER);
+    match(buffer, TK_PAREN_L);
+    emitSymbol("(");
+    parameterList(buffer, &subroutineSymbolTable);
+    match(buffer, TK_PAREN_R);
+    emitSymbol(")");
+    emitFunctionDeclaration(currentFile, functionName, subroutineSymbolTable.length);
+    subroutineBody(buffer, &subroutineSymbolTable);
+
     break;
   }
   case TK_METHOD:
   {
+    // methods need to
+    // push argument 0
+    // pop pointer 0
     match(buffer, TK_METHOD);
     emitKeyword("method");
+
+    returnType(buffer);
+    emitIdentifierSubroutine(identifierBuffer, "declaration");
+    char *functionName = symtable[tokenval].lexptr;
+    match(buffer, TK_IDENTIFIER);
+    match(buffer, TK_PAREN_L);
+    emitSymbol("(");
+    parameterList(buffer, &subroutineSymbolTable);
+    match(buffer, TK_PAREN_R);
+    emitSymbol(")");
+    emitFunctionDeclaration(currentFile, functionName, subroutineSymbolTable.length);
+    subroutineBody(buffer, &subroutineSymbolTable);
+
     break;
   }
   default:
@@ -1037,19 +1087,6 @@ bool subroutineDec(Buffer *buffer)
     error("error while parsing subroutine declaration");
     return false;
   }
-
-  ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
-  subroutineSymbolTable.entries = subroutineSymbolTableEntries;
-  startSubroutine(&subroutineSymbolTable);
-
-  voidType(buffer);
-  identifierSubroutineDeclaration(buffer);
-  match(buffer, TK_PAREN_L);
-  emitSymbol("(");
-  parameterList(buffer, &subroutineSymbolTable);
-  match(buffer, TK_PAREN_R);
-  emitSymbol(")");
-  subroutineBody(buffer, &subroutineSymbolTable);
 
   emitXMLCloseTag("subroutineDec");
 
