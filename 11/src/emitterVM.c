@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "emitterVM.h"
+#include "error.h"
 #include "symbol.h"
 
 static int indent = 0;
@@ -130,12 +131,29 @@ void emitLabel(char *label)
   fprintf(outfile, "label %s\n", label);
 }
 
+void emitIfCondition(char *elseBlock)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%snot\n", indentation);
+  fprintf(outfile, "%sif-goto %s\n", indentation, elseBlock);
+}
+
+void emitIfSkip(char *done)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%sgoto %s\n", indentation, done);
+}
+
 void emitWhileLoopTest(char *done)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  fprintf(outfile, "%sneg\n", indentation);
+  fprintf(outfile, "%snot\n", indentation);
   fprintf(outfile, "%sif-goto %s\n", indentation, done);
 }
 
@@ -155,24 +173,71 @@ void emitTermInteger(int n)
   fprintf(outfile, "%spush constant %d\n", indentation, n);
 }
 
-void emitOperation(char op)
+void emitOperation(EmitterOp op)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   switch (op)
   {
-  case '*':
+  case EM_NOT:
+  {
+    fprintf(outfile, "%snot\n", indentation);
+    break;
+  }
+  case EM_NEG:
+  {
+    fprintf(outfile, "%sneg\n", indentation);
+    break;
+  }
+  case EM_MUL:
   {
     fprintf(outfile, "%scall Math.multiply 2\n", indentation);
     break;
   }
-  case '+':
+  case EM_ADD:
   {
     fprintf(outfile, "%sadd\n", indentation);
     break;
   }
+  case EM_SUB:
+  {
+    fprintf(outfile, "%ssub\n", indentation);
+    break;
+  }
+  case EM_DIV:
+  {
+    fprintf(outfile, "%sMath.divide\n", indentation);
+    break;
+  }
+  case EM_AND:
+  {
+    fprintf(outfile, "%sand\n", indentation);
+    break;
+  }
+  case EM_OR:
+  {
+    fprintf(outfile, "%sor\n", indentation);
+    break;
+  }
+  case EM_LT:
+  {
+    fprintf(outfile, "%slt\n", indentation);
+    break;
+  }
+  case EM_GT:
+  {
+    fprintf(outfile, "%sgt\n", indentation);
+    break;
+  }
+  case EM_EQ:
+  {
+    fprintf(outfile, "%seq\n", indentation);
+    break;
+  }
   default:
+    fprintf(stderr, "encountered unidentified operator %d\n", op);
+    error("while emitting operations");
     break;
   }
 }

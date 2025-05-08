@@ -7,7 +7,22 @@
 
 void initEmitterVM(FILE *out);
 
-void emitOperation(char op);
+typedef enum EM_OP
+{
+  EM_MUL,
+  EM_ADD,
+  EM_SUB,
+  EM_DIV,
+  EM_AND,
+  EM_OR,
+  EM_LT,
+  EM_GT,
+  EM_EQ,
+  EM_NEG,
+  EM_NOT,
+} EmitterOp;
+
+void emitOperation(EmitterOp op);
 void emitTermBool(bool value);
 void emitTermInteger(int n);
 void emitMethodCall(char *objectName, char *id2, int argc);
@@ -20,4 +35,6 @@ void emitVoidFunctionCleanup();
 void emitLabel(char *label);
 void emitWhileLoopLoop(char *loop);
 void emitWhileLoopTest(char *done);
+void emitIfSkip(char *done);
+void emitIfCondition(char *elseBlock);
 #endif

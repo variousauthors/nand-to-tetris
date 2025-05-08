@@ -35,6 +35,7 @@ bool class(Buffer *buffer);
 bool expression(Buffer *buffer);
 bool functionCall(Buffer *buffer, char *subroutineName);
 bool methodCall(Buffer *buffer, char *subjectName);
+bool term(Buffer *buffer);
 
 int parse(FILE *file)
 {
@@ -290,12 +291,16 @@ bool unaryOp(Buffer *buffer)
   {
     match(buffer, TK_TILDE);
     emitSymbol("~");
+    term(buffer);
+    emitOperation(EM_NOT);
     break;
   }
   case TK_MINUS:
   {
     match(buffer, TK_MINUS);
     emitSymbol("-");
+    term(buffer);
+    emitOperation(EM_NEG);
     break;
   }
   default:
@@ -317,7 +322,6 @@ bool term(Buffer *buffer)
   case TK_MINUS:
   {
     unaryOp(buffer);
-    term(buffer);
     break;
   }
   case TK_INTEGER:
@@ -601,63 +605,63 @@ bool opTerm(Buffer *buffer)
   {
     match(buffer, TK_PLUS);
     term(buffer);
-    emitOperation('+');
+    emitOperation(EM_ADD);
     break;
   }
   case TK_MINUS:
   {
     match(buffer, TK_MINUS);
     term(buffer);
-    emitOperation('-');
+    emitOperation(EM_SUB);
     break;
   }
   case TK_ASTERISK:
   {
     match(buffer, TK_ASTERISK);
     term(buffer);
-    emitOperation('*');
+    emitOperation(EM_MUL);
     break;
   }
   case TK_SLASH:
   {
     match(buffer, TK_SLASH);
     term(buffer);
-    emitOperation('/');
+    emitOperation(EM_DIV);
     break;
   }
   case TK_AMP:
   {
     match(buffer, TK_AMP);
     term(buffer);
-    emitOperation('&');
+    emitOperation(EM_AND);
     break;
   }
   case TK_BAR:
   {
     match(buffer, TK_BAR);
     term(buffer);
-    emitOperation('|');
+    emitOperation(EM_OR);
     break;
   }
   case TK_ANGLE_BRACKET_L:
   {
     match(buffer, TK_ANGLE_BRACKET_L);
     term(buffer);
-    emitOperation('<');
+    emitOperation(EM_LT);
     break;
   }
   case TK_ANGLE_BRACKET_R:
   {
     match(buffer, TK_ANGLE_BRACKET_R);
     term(buffer);
-    emitOperation('>');
+    emitOperation(EM_GT);
     break;
   }
   case TK_EQUAL:
   {
     match(buffer, TK_EQUAL);
     term(buffer);
-    emitOperation('=');
+    emitOperation(EM_EQ);
     break;
   }
   default:
@@ -815,22 +819,21 @@ bool whileStatement(Buffer *buffer)
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
   expression(buffer);
+  // not
+  // if-goto compilationUnit_1
+  emitWhileLoopTest(done);
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
-
-  emitWhileLoopTest(done);
-  // neg
-  // if-goto compilationUnit_1
 
   match(buffer, TK_BRACE_L);
   emitSymbol("{");
   statements(buffer);
-  match(buffer, TK_BRACE_R);
-  emitSymbol("}");
-
   // goto compilationUnit_0
   emitWhileLoopLoop(loop); // loop
   emitLabel(done);
+
+  match(buffer, TK_BRACE_R);
+  emitSymbol("}");
 
   emitXMLCloseTag("whileStatement");
 
@@ -878,6 +881,26 @@ bool returnStatement(Buffer *buffer)
 
 bool ifStatement(Buffer *buffer)
 {
+  /**
+   * expression
+   * not
+   * if-goto ELSE
+   * 
+   * statements
+   * 
+   * goto SKIP
+   * label ELSE
+   * 
+   * statements
+   * 
+   * label SKIP
+   */
+
+  char elseBlock[LABEL_SIZE];
+  initLabel(elseBlock);
+  char done[LABEL_SIZE];
+  initLabel(done);
+
   match(buffer, TK_IF);
 
   emitXMLOpenTag("ifStatement");
@@ -886,12 +909,16 @@ bool ifStatement(Buffer *buffer)
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
   expression(buffer);
+  // not, if-goto
+  emitIfCondition(elseBlock);
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
 
   match(buffer, TK_BRACE_L);
   emitSymbol("{");
   statements(buffer);
+  // jump to skip
+  emitIfSkip(done);
   match(buffer, TK_BRACE_R);
   emitSymbol("}");
 
@@ -902,10 +929,14 @@ bool ifStatement(Buffer *buffer)
     emitKeyword("else");
     match(buffer, TK_BRACE_L);
     emitSymbol("{");
+    emitLabel(elseBlock);
     statements(buffer);
+    // just fall through to the done label
     match(buffer, TK_BRACE_R);
     emitSymbol("}");
   }
+
+  emitLabel(done);
 
   emitXMLCloseTag("ifStatement");
 
@@ -918,7 +949,6 @@ bool letStatement(Buffer *buffer)
 
   emitXMLOpenTag("letStatement");
   emitKeyword("let");
-
 
   ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(identifierBuffer);
 
