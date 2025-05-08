@@ -35,7 +35,7 @@ int parse(FILE *file)
 
   FILE *nullOut = fopen("/dev/null", "w");
   initEmitterVM(stdout);
-  initEmitterXML(nullOut);
+  initEmitterXML(stdout);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -879,6 +879,14 @@ bool letStatement(Buffer *buffer)
   emitXMLOpenTag("letStatement");
   emitKeyword("let");
 
+
+  ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(identifierBuffer);
+
+  if (!entry) {
+    fprintf(stderr, "tried to assign to %s\n", identifierBuffer);
+    error("while parsing let statement");
+  }
+
   emitIdentifier(identifierBuffer, "reference");
   match(buffer, TK_IDENTIFIER);
 
@@ -895,6 +903,10 @@ bool letStatement(Buffer *buffer)
   match(buffer, TK_EQUAL);
   emitSymbol("=");
   expression(buffer);
+
+  emitAssignment(entry);
+
+  // pop into the variable
   match(buffer, TK_SEMI);
   emitSymbol(";");
 

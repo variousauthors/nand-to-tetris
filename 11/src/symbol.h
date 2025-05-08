@@ -53,6 +53,8 @@ void startSubroutine(ScopedSymbolTable *table);
 void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind);
 int indexOf(ScopedSymbolTable *table, char *name);
 
+ScopedSymbolTableEntry *getIndexFromGlobalTables(char *identifier);
+
 // two global symbol tables
 extern ScopedSymbolTable classSymbolTable;
 extern ScopedSymbolTable subroutineSymbolTable;

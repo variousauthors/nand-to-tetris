@@ -1,6 +1,7 @@
 #ifndef EMITTER_VM_H
 #define EMITTER_VM_H
 
+#include "symbol.h"
 #include <stdio.h>
 
 void initEmitterVM(FILE *out);
@@ -11,6 +12,7 @@ void emitMethodCall(char *objectName, char *id2, int argc);
 void emitVoidReturnValue();
 void emitReturn();
 void emitFunctionDeclaration(char *className, char *functionName, int argc);
+void emitAssignment(ScopedSymbolTableEntry *entry);
 void emitVoidFunctionCleanup();
 
 #endif

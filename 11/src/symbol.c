@@ -124,3 +124,25 @@ int varCount(ScopedSymbolTable *table, VariableKind kind) {
 
   return count;
 }
+
+ScopedSymbolTableEntry *getIndexFromGlobalTables(char *identifier)
+{
+  // first check the subroutine table
+  int index;
+
+  index = indexOf(&subroutineSymbolTable, identifier);
+
+  if (index >= 0)
+  {
+    return &subroutineSymbolTable.entries[index];
+  }
+
+  index = indexOf(&classSymbolTable, identifier);
+
+  if (index >= 0)
+  {
+    return &classSymbolTable.entries[index];
+  }
+
+  return 0;
+}

@@ -1,0 +1,453 @@
+<class>
+  <keyword> class </keyword>
+  <identifier category="class" mode="declaration"> Main </identifier>
+  <symbol> { </symbol>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> void </keyword>
+    <symbol> ( </symbol>
+    <parameterList>
+    </parameterList>
+    <symbol> ) </symbol>
+function Main.main 0
+    <subroutineBody>
+      <symbol> { </symbol>
+      <varDec>
+        <keyword> var </keyword>
+        <keyword> int </keyword>
+        <identifier category="var" position="0" mode="declaration"> value </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <statements>
+        <doStatement>
+          <expressionList>
+            <expression>
+              <term>
+  push constant 8001
+              </term>
+            </expression>
+            <symbol> , </symbol>
+            <expression>
+              <term>
+  push constant 16
+              </term>
+            </expression>
+            <symbol> , </symbol>
+            <expression>
+              <term>
+                <symbol> - </symbol>
+                <term>
+  push constant 1
+                </term>
+              </term>
+            </expression>
+          </expressionList>
+  call Main.fillMemory 3
+  pop temp 0
+        </doStatement>
+        <letStatement>
+          <keyword> let </keyword>
+          <identifier category="var" position="0" mode="reference"> value </identifier>
+          <symbol> = </symbol>
+          <expression>
+            <term>
+              <expressionList>
+                <expression>
+                  <term>
+  push constant 8000
+                  </term>
+                </expression>
+              </expressionList>
+  call Memory.peek 1
+            </term>
+          </expression>
+  pop local 0
+          <symbol> ; </symbol>
+        </letStatement>
+        <doStatement>
+          <expressionList>
+            <expression>
+              <term>
+                <identifier category="var" position="0" mode="reference"> value </identifier>
+              </term>
+            </expression>
+          </expressionList>
+  call Main.convert 1
+  pop temp 0
+        </doStatement>
+        <returnStatement>
+  push constant 0
+  return
+        </returnStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> void </keyword>
+    <symbol> ( </symbol>
+    <parameterList>
+      <keyword> int </keyword>
+      <identifier category="argument" position="0" mode="declaration"> value </identifier>
+    </parameterList>
+    <symbol> ) </symbol>
+function Main.convert 1
+    <subroutineBody>
+      <symbol> { </symbol>
+      <varDec>
+        <keyword> var </keyword>
+        <keyword> int </keyword>
+        <identifier category="var" position="0" mode="declaration"> mask </identifier>
+        <symbol> , </symbol>
+        <identifier category="var" position="1" mode="declaration"> position </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <varDec>
+        <keyword> var </keyword>
+        <keyword> boolean </keyword>
+        <identifier category="var" position="2" mode="declaration"> loop </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <statements>
+        <letStatement>
+          <keyword> let </keyword>
+          <identifier category="var" position="2" mode="reference"> loop </identifier>
+          <symbol> = </symbol>
+          <expression>
+            <term>
+              <keyword> true </keyword>
+            </term>
+          </expression>
+  pop local 2
+          <symbol> ; </symbol>
+        </letStatement>
+        <whileStatement>
+          <keyword> while </keyword>
+          <symbol> ( </symbol>
+          <expression>
+            <term>
+              <identifier category="var" position="2" mode="reference"> loop </identifier>
+            </term>
+          </expression>
+          <symbol> ) </symbol>
+          <symbol> { </symbol>
+          <statements>
+            <letStatement>
+              <keyword> let </keyword>
+              <identifier category="var" position="1" mode="reference"> position </identifier>
+              <symbol> = </symbol>
+              <expression>
+                <term>
+                  <identifier category="var" position="1" mode="reference"> position </identifier>
+                </term>
+                <term>
+  push constant 1
+                </term>
+  add
+              </expression>
+  pop local 1
+              <symbol> ; </symbol>
+            </letStatement>
+            <letStatement>
+              <keyword> let </keyword>
+              <identifier category="var" position="0" mode="reference"> mask </identifier>
+              <symbol> = </symbol>
+              <expression>
+                <term>
+                  <expressionList>
+                    <expression>
+                      <term>
+                        <identifier category="var" position="0" mode="reference"> mask </identifier>
+                      </term>
+                    </expression>
+                  </expressionList>
+  call Main.nextMask 1
+                </term>
+              </expression>
+  pop local 0
+              <symbol> ; </symbol>
+            </letStatement>
+            <ifStatement>
+              <keyword> if </keyword>
+              <symbol> ( </symbol>
+              <expression>
+                <term>
+                  <symbol> ~ </symbol>
+                  <term>
+                    <expression>
+                      <term>
+                        <identifier category="var" position="1" mode="reference"> position </identifier>
+                      </term>
+                      <term>
+  push constant 16
+                      </term>
+                    </expression>
+                  </term>
+                </term>
+              </expression>
+              <symbol> ) </symbol>
+              <symbol> { </symbol>
+              <statements>
+                <ifStatement>
+                  <keyword> if </keyword>
+                  <symbol> ( </symbol>
+                  <expression>
+                    <term>
+                      <symbol> ~ </symbol>
+                      <term>
+                        <expression>
+                          <term>
+                            <expression>
+                              <term>
+                                <identifier category="argument" position="0" mode="reference"> value </identifier>
+                              </term>
+                              <term>
+                                <identifier category="var" position="0" mode="reference"> mask </identifier>
+                              </term>
+                            </expression>
+                          </term>
+                          <term>
+  push constant 0
+                          </term>
+                        </expression>
+                      </term>
+                    </term>
+                  </expression>
+                  <symbol> ) </symbol>
+                  <symbol> { </symbol>
+                  <statements>
+                    <doStatement>
+                      <expressionList>
+                        <expression>
+                          <term>
+  push constant 8000
+                          </term>
+                          <term>
+                            <identifier category="var" position="1" mode="reference"> position </identifier>
+                          </term>
+  add
+                        </expression>
+                        <symbol> , </symbol>
+                        <expression>
+                          <term>
+  push constant 1
+                          </term>
+                        </expression>
+                      </expressionList>
+  call Memory.poke 2
+  pop temp 0
+                    </doStatement>
+                  </statements>
+                  <symbol> } </symbol>
+                  <keyword> else </keyword>
+                  <symbol> { </symbol>
+                  <statements>
+                    <doStatement>
+                      <expressionList>
+                        <expression>
+                          <term>
+  push constant 8000
+                          </term>
+                          <term>
+                            <identifier category="var" position="1" mode="reference"> position </identifier>
+                          </term>
+  add
+                        </expression>
+                        <symbol> , </symbol>
+                        <expression>
+                          <term>
+  push constant 0
+                          </term>
+                        </expression>
+                      </expressionList>
+  call Memory.poke 2
+  pop temp 0
+                    </doStatement>
+                  </statements>
+                  <symbol> } </symbol>
+                </ifStatement>
+              </statements>
+              <symbol> } </symbol>
+              <keyword> else </keyword>
+              <symbol> { </symbol>
+              <statements>
+                <letStatement>
+                  <keyword> let </keyword>
+                  <identifier category="var" position="2" mode="reference"> loop </identifier>
+                  <symbol> = </symbol>
+                  <expression>
+                    <term>
+                      <keyword> false </keyword>
+                    </term>
+                  </expression>
+  pop local 2
+                  <symbol> ; </symbol>
+                </letStatement>
+              </statements>
+              <symbol> } </symbol>
+            </ifStatement>
+          </statements>
+          <symbol> } </symbol>
+        </whileStatement>
+        <returnStatement>
+  push constant 0
+  return
+        </returnStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> int </keyword>
+    <symbol> ( </symbol>
+    <parameterList>
+      <keyword> int </keyword>
+      <identifier category="argument" position="0" mode="declaration"> mask </identifier>
+    </parameterList>
+    <symbol> ) </symbol>
+function Main.nextMask 1
+    <subroutineBody>
+      <symbol> { </symbol>
+      <statements>
+        <ifStatement>
+          <keyword> if </keyword>
+          <symbol> ( </symbol>
+          <expression>
+            <term>
+              <identifier category="argument" position="0" mode="reference"> mask </identifier>
+            </term>
+            <term>
+  push constant 0
+            </term>
+          </expression>
+          <symbol> ) </symbol>
+          <symbol> { </symbol>
+          <statements>
+            <returnStatement>
+              <expression>
+                <term>
+  push constant 1
+                </term>
+              </expression>
+  return
+            </returnStatement>
+          </statements>
+          <symbol> } </symbol>
+          <keyword> else </keyword>
+          <symbol> { </symbol>
+          <statements>
+            <returnStatement>
+              <expression>
+                <term>
+                  <identifier category="argument" position="0" mode="reference"> mask </identifier>
+                </term>
+                <term>
+push constant 2
+                </term>
+call Math.multiply 2
+              </expression>
+return
+            </returnStatement>
+          </statements>
+          <symbol> } </symbol>
+        </ifStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> void </keyword>
+    <symbol> ( </symbol>
+    <parameterList>
+      <keyword> int </keyword>
+      <identifier category="argument" position="0" mode="declaration"> address </identifier>
+      <symbol> , </symbol>
+      <keyword> int </keyword>
+      <identifier category="argument" position="1" mode="declaration"> length </identifier>
+      <symbol> , </symbol>
+      <keyword> int </keyword>
+      <identifier category="argument" position="2" mode="declaration"> value </identifier>
+    </parameterList>
+    <symbol> ) </symbol>
+function Main.fillMemory 3
+    <subroutineBody>
+      <symbol> { </symbol>
+      <statements>
+        <whileStatement>
+          <keyword> while </keyword>
+          <symbol> ( </symbol>
+          <expression>
+            <term>
+              <identifier category="argument" position="1" mode="reference"> length </identifier>
+            </term>
+            <term>
+push constant 0
+            </term>
+          </expression>
+          <symbol> ) </symbol>
+          <symbol> { </symbol>
+          <statements>
+            <doStatement>
+              <expressionList>
+                <expression>
+                  <term>
+                    <identifier category="argument" position="0" mode="reference"> address </identifier>
+                  </term>
+                </expression>
+                <symbol> , </symbol>
+                <expression>
+                  <term>
+                    <identifier category="argument" position="2" mode="reference"> value </identifier>
+                  </term>
+                </expression>
+              </expressionList>
+call Memory.poke 2
+pop temp 0
+            </doStatement>
+            <letStatement>
+              <keyword> let </keyword>
+              <identifier category="argument" position="1" mode="reference"> length </identifier>
+              <symbol> = </symbol>
+              <expression>
+                <term>
+                  <identifier category="argument" position="1" mode="reference"> length </identifier>
+                </term>
+                <term>
+push constant 1
+                </term>
+              </expression>
+pop argument 1
+              <symbol> ; </symbol>
+            </letStatement>
+            <letStatement>
+              <keyword> let </keyword>
+              <identifier category="argument" position="0" mode="reference"> address </identifier>
+              <symbol> = </symbol>
+              <expression>
+                <term>
+                  <identifier category="argument" position="0" mode="reference"> address </identifier>
+                </term>
+                <term>
+push constant 1
+                </term>
+add
+              </expression>
+pop argument 0
+              <symbol> ; </symbol>
+            </letStatement>
+          </statements>
+          <symbol> } </symbol>
+        </whileStatement>
+        <returnStatement>
+push constant 0
+return
+        </returnStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <symbol> } </symbol>
+</class>

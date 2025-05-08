@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "emitterVM.h"
+#include "symbol.h"
 
 static int indent = 0;
 static const int MAX_INDENT = 128;
@@ -27,6 +28,30 @@ static void makeIndentation(char *indentation)
 
 void initEmitterVM(FILE *out) {
   outfile = out;
+}
+
+char *getSegment(VariableKind kind)
+{
+  switch (kind)
+  {
+  case VK_STATIC:
+    return "static";
+  case VK_FIELD:
+    return "this";
+  case VK_ARG:
+    return "argument";
+  case VK_VAR:
+    return "local";
+  default:
+    break;
+  }
+}
+
+void emitAssignment(ScopedSymbolTableEntry *entry) {
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%spop %s %d\n", indentation, getSegment(entry->kind), entry->position);
 }
 
 void emitVoidFunctionCleanup() {
