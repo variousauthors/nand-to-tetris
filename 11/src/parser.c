@@ -33,6 +33,10 @@ int parse(FILE *file)
   // output before stuff like segfaults happen
   setbuf(stdout, NULL);
 
+  FILE *nullOut = fopen("/dev/null", "w");
+  initEmitterVM(stdout);
+  initEmitterXML(nullOut);
+
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
 

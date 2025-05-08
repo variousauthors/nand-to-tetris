@@ -13,6 +13,8 @@ static int indent = 0;
 static const int MAX_INDENT = 128;
 static const int SPACES = 2;
 
+static FILE *outfile;
+
 /** returns a size appropriate for indentation whitespace */
 static int indentSize(int indent)
 {
@@ -31,12 +33,16 @@ static void makeIndentation(char *indentation)
   indentation[i] = '\0';
 }
 
+void initEmitterXML(FILE *out) {
+  outfile = out;
+}
+
 void emitXMLPrimitive(char *tag, char *value)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%s<%s> %s </%s>\n", indentation, tag, value, tag);
+  fprintf(outfile, "%s<%s> %s </%s>\n", indentation, tag, value, tag);
 }
 
 void emitXMLPrimitiveInteger(char *tag, int value)
@@ -44,7 +50,7 @@ void emitXMLPrimitiveInteger(char *tag, int value)
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%s<%s> %d </%s>\n", indentation, tag, value, tag);
+  fprintf(outfile, "%s<%s> %d </%s>\n", indentation, tag, value, tag);
 }
 
 void emitXMLOpenTag(char *tag)
@@ -52,7 +58,7 @@ void emitXMLOpenTag(char *tag)
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%s<%s>\n", indentation, tag);
+  fprintf(outfile, "%s<%s>\n", indentation, tag);
   indent++;
 }
 
@@ -63,7 +69,7 @@ void emitXMLCloseTag(char *tag)
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%s</%s>\n", indentation, tag);
+  fprintf(outfile, "%s</%s>\n", indentation, tag);
 }
 
 void emitXMLSelfClosingTag(char *tag)
@@ -71,7 +77,7 @@ void emitXMLSelfClosingTag(char *tag)
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%s<%s/>\n", indentation, tag);
+  fprintf(outfile, "%s<%s/>\n", indentation, tag);
 }
 
 void emitSubroutineBodyOpen()
@@ -138,7 +144,7 @@ void emitIdentifierClass(char *identifier, char *mode)
   makeIndentation(indentation);
 
   // output "declaration" as opposed to "reference"
-  printf("%s<identifier category=\"class\" mode=\"%s\"> %s </identifier>\n", indentation, mode, identifier);
+  fprintf(outfile, "%s<identifier category=\"class\" mode=\"%s\"> %s </identifier>\n", indentation, mode, identifier);
 }
 
 void emitIdentifierSubroutine(char *identifier, char *mode)
@@ -147,7 +153,7 @@ void emitIdentifierSubroutine(char *identifier, char *mode)
   makeIndentation(indentation);
 
   // output "declaration" as opposed to "reference"
-  printf("%s<identifier category=\"subroutine\" mode=\"%s\"> %s </identifier>\n", indentation, mode, identifier);
+  fprintf(outfile, "%s<identifier category=\"subroutine\" mode=\"%s\"> %s </identifier>\n", indentation, mode, identifier);
 }
 
 char *getCategory(VariableKind kind)
@@ -207,6 +213,6 @@ void emitIdentifier(char *identifier, char *mode)
   }
   else
   {
-    printf("%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, mode, entry->name->lexptr);
+    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, mode, entry->name->lexptr);
   }
 }

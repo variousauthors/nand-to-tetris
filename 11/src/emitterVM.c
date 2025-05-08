@@ -1,8 +1,11 @@
 #include <stdio.h>
+#include "emitterVM.h"
 
 static int indent = 0;
 static const int MAX_INDENT = 128;
 static const int SPACES = 2;
+
+static FILE *outfile;
 
 /** returns a size appropriate for indentation whitespace */
 static int indentSize(int indent)
@@ -22,23 +25,27 @@ static void makeIndentation(char *indentation)
   indentation[i] = '\0';
 }
 
+void initEmitterVM(FILE *out) {
+  outfile = out;
+}
+
 void emitVoidFunctionCleanup() {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%spop temp 0\n", indentation);
+  fprintf(outfile, "%spop temp 0\n", indentation);
 }
 
 void emitFunctionDeclaration(char *className, char *functionName, int argc) {
   indent++;
-  printf("function %s.%s %d\n", className, functionName, argc);
+  fprintf(outfile, "function %s.%s %d\n", className, functionName, argc);
 }
 
 void emitReturn()
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
-  printf("%sreturn\n", indentation);
+  fprintf(outfile, "%sreturn\n", indentation);
   indent--;
 }
 
@@ -47,7 +54,7 @@ void emitVoidReturnValue()
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%spush constant 0\n", indentation);
+  fprintf(outfile, "%spush constant 0\n", indentation);
 }
 
 void emitMethodCall(char *objectName, char *methodName, int argc)
@@ -55,7 +62,7 @@ void emitMethodCall(char *objectName, char *methodName, int argc)
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%scall %s.%s %d\n", indentation, objectName, methodName, argc);
+  fprintf(outfile, "%scall %s.%s %d\n", indentation, objectName, methodName, argc);
 }
 
 void emitConstant(int n)
@@ -63,7 +70,7 @@ void emitConstant(int n)
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  printf("%spush constant %d\n", indentation, n);
+  fprintf(outfile, "%spush constant %d\n", indentation, n);
 }
 
 void emitOperation(char op)
@@ -75,12 +82,12 @@ void emitOperation(char op)
   {
   case '*':
   {
-    printf("%scall Math.multiply 2\n", indentation);
+    fprintf(outfile, "%scall Math.multiply 2\n", indentation);
     break;
   }
   case '+':
   {
-    printf("%ssub\n", indentation);
+    fprintf(outfile, "%sadd\n", indentation);
     break;
   }
   default:

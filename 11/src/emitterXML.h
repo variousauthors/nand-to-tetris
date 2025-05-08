@@ -1,6 +1,10 @@
+#ifndef EMITTER_XML_H
+#define EMITTER_XML_H
+
 #include "symbol.h"
 
 // two scoped symbol tables to store representation details
+void initEmitterXML(FILE *out);
 
 void emitXMLOpenTag(char* tag);
 void emitXMLCloseTag(char* tag);
@@ -19,3 +23,5 @@ void emitSubroutineBodyOpen ();
 void emitSubroutineBodyClose ();
 void emitVarDecOpen ();
 void emitVarDecClose ();
+
+#endif
