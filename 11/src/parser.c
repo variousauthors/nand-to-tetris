@@ -13,6 +13,15 @@
 
 Token lookahead;
 int currentAddress = 0;
+int currentLabel = 0;
+
+int nextLabel () {
+  return currentLabel++;
+}
+
+const int LABEL_SIZE = 128;
+
+#define initLabel(label) snprintf(label, sizeof(label), "%s_%d", currentFile, nextLabel());
 
 // two global symbol tables
 ScopedSymbolTable classSymbolTable;
@@ -778,10 +787,30 @@ bool subroutineCall(Buffer *buffer)
 
 bool whileStatement(Buffer *buffer)
 {
+  char loop[LABEL_SIZE];
+  initLabel(loop);
+
+  char done[LABEL_SIZE];
+  initLabel(done);
+
+  /**
+   * // need to keep track of these indices
+   * // need the name of the current file
+   * label compilationUnit_0
+   *   push condition
+   *   not
+   *   if-goto compilationUnit_1
+   * 
+   *   statements
+   * 
+   *   goto compilationUnit_0
+   * label compilationUnit_1
+   */
   match(buffer, TK_WHILE);
 
   emitXMLOpenTag("whileStatement");
   emitKeyword("while");
+  emitLabel(loop);
 
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
@@ -789,11 +818,19 @@ bool whileStatement(Buffer *buffer)
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
 
+  emitWhileLoopTest(done);
+  // neg
+  // if-goto compilationUnit_1
+
   match(buffer, TK_BRACE_L);
   emitSymbol("{");
   statements(buffer);
   match(buffer, TK_BRACE_R);
   emitSymbol("}");
+
+  // goto compilationUnit_0
+  emitWhileLoopLoop(loop); // loop
+  emitLabel(done);
 
   emitXMLCloseTag("whileStatement");
 
@@ -1115,6 +1152,7 @@ bool subroutineDec(Buffer *buffer)
 bool class(Buffer *buffer)
 {
   int tempval;
+  currentLabel = 0;
 
   ScopedSymbolTableEntry classSymbolTableEntries[10];
   classSymbolTable.entries = classSymbolTableEntries;

@@ -17,5 +17,7 @@ void emitFunctionDeclaration(char *className, char *functionName, int argc);
 void emitVariableAssignment(ScopedSymbolTableEntry *entry);
 void emitVariableReference(ScopedSymbolTableEntry *entry);
 void emitVoidFunctionCleanup();
-
+void emitLabel(char *label);
+void emitWhileLoopLoop(char *loop);
+void emitWhileLoopTest(char *done);
 #endif

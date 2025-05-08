@@ -59,11 +59,14 @@ void emitTermBool(bool value)
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
-  if (value) {
+  if (value)
+  {
     // TRUE is 1111111111111111 (AKA -1)
     fprintf(outfile, "%spush constant 1\n", indentation);
     fprintf(outfile, "%sneg\n", indentation);
-  } else {
+  }
+  else
+  {
     fprintf(outfile, "%spush constant 0\n", indentation);
   }
 }
@@ -120,6 +123,28 @@ void emitMethodCall(char *objectName, char *methodName, int argc)
   makeIndentation(indentation);
 
   fprintf(outfile, "%scall %s.%s %d\n", indentation, objectName, methodName, argc);
+}
+
+void emitLabel(char *label)
+{
+  fprintf(outfile, "label %s\n", label);
+}
+
+void emitWhileLoopTest(char *done)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%sneg\n", indentation);
+  fprintf(outfile, "%sif-goto %s\n", indentation, done);
+}
+
+void emitWhileLoopLoop(char *loop)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%sgoto %s\n", indentation, loop);
 }
 
 void emitTermInteger(int n)
