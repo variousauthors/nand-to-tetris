@@ -26,7 +26,8 @@ static void makeIndentation(char *indentation)
   indentation[i] = '\0';
 }
 
-void initEmitterVM(FILE *out) {
+void initEmitterVM(FILE *out)
+{
   outfile = out;
 }
 
@@ -47,21 +48,52 @@ char *getSegment(VariableKind kind)
   }
 }
 
-void emitAssignment(ScopedSymbolTableEntry *entry) {
+typedef enum VMConstants
+{
+  EM_TRUE,
+  EM_INTEGER,
+} VMConstants;
+
+void emitTermBool(bool value)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  if (value) {
+    // TRUE is 1111111111111111 (AKA -1)
+    fprintf(outfile, "%spush constant 1\n", indentation);
+    fprintf(outfile, "%sneg\n", indentation);
+  } else {
+    fprintf(outfile, "%spush constant 0\n", indentation);
+  }
+}
+
+void emitVariableReference(ScopedSymbolTableEntry *entry)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%spush %s %d\n", indentation, getSegment(entry->kind), entry->position);
+}
+
+void emitVariableAssignment(ScopedSymbolTableEntry *entry)
+{
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   fprintf(outfile, "%spop %s %d\n", indentation, getSegment(entry->kind), entry->position);
 }
 
-void emitVoidFunctionCleanup() {
+void emitVoidFunctionCleanup()
+{
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
   fprintf(outfile, "%spop temp 0\n", indentation);
 }
 
-void emitFunctionDeclaration(char *className, char *functionName, int argc) {
+void emitFunctionDeclaration(char *className, char *functionName, int argc)
+{
   indent++;
   fprintf(outfile, "function %s.%s %d\n", className, functionName, argc);
 }
@@ -90,7 +122,7 @@ void emitMethodCall(char *objectName, char *methodName, int argc)
   fprintf(outfile, "%scall %s.%s %d\n", indentation, objectName, methodName, argc);
 }
 
-void emitConstant(int n)
+void emitTermInteger(int n)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);

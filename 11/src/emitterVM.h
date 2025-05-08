@@ -3,16 +3,19 @@
 
 #include "symbol.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 void initEmitterVM(FILE *out);
 
 void emitOperation(char op);
-void emitConstant(int n);
+void emitTermBool(bool value);
+void emitTermInteger(int n);
 void emitMethodCall(char *objectName, char *id2, int argc);
 void emitVoidReturnValue();
 void emitReturn();
 void emitFunctionDeclaration(char *className, char *functionName, int argc);
-void emitAssignment(ScopedSymbolTableEntry *entry);
+void emitVariableAssignment(ScopedSymbolTableEntry *entry);
+void emitVariableReference(ScopedSymbolTableEntry *entry);
 void emitVoidFunctionCleanup();
 
 #endif

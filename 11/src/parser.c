@@ -314,7 +314,7 @@ bool term(Buffer *buffer)
   case TK_INTEGER:
   {
     // emit first because tokenval gets clobbered
-    emitConstant(tokenval);
+    emitTermInteger(tokenval);
     match(buffer, TK_INTEGER);
     break;
   }
@@ -403,6 +403,7 @@ bool term(Buffer *buffer)
   case TK_TRUE:
   {
     match(buffer, TK_TRUE);
+    emitTermBool(true);
     emitKeyword("true");
     break;
   }
@@ -489,6 +490,8 @@ bool term(Buffer *buffer)
     else
     {
       // varName
+      ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(id);
+      emitVariableReference(entry);
       emitIdentifier(id, "reference");
     }
 
@@ -904,9 +907,9 @@ bool letStatement(Buffer *buffer)
   emitSymbol("=");
   expression(buffer);
 
-  emitAssignment(entry);
-
   // pop into the variable
+  emitVariableAssignment(entry);
+
   match(buffer, TK_SEMI);
   emitSymbol(";");
 
