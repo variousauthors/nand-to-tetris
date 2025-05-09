@@ -80,6 +80,13 @@ void emitVariableReference(ScopedSymbolTableEntry *entry)
   fprintf(outfile, "%spush %s %d\n", indentation, getSegment(entry->kind), entry->position);
 }
 
+void emitThisReference() {
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%spush pointer 0\n", indentation);
+}
+
 void emitVariableAssignment(ScopedSymbolTableEntry *entry)
 {
   char indentation[indentSize(indent)];
@@ -136,6 +143,14 @@ void emitMethodCall(char *objectName, char *methodName, int argc)
   makeIndentation(indentation);
 
   fprintf(outfile, "%scall %s.%s %d\n", indentation, objectName, methodName, argc);
+}
+
+void emitFunctionCall(char *objectName, int argc)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%scall %s %d\n", indentation, objectName, argc);
 }
 
 void emitLabel(char *label)

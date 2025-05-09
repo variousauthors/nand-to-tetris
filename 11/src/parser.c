@@ -482,6 +482,7 @@ bool term(Buffer *buffer)
   case TK_THIS:
   {
     match(buffer, TK_THIS);
+    emitThisReference();
     emitKeyword("this");
     break;
   }
@@ -744,7 +745,11 @@ bool functionCall(Buffer *buffer, char *subroutineName)
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
 
-  expressionList(buffer, lookahead == TK_PAREN_R);
+  // needs to return how many expressions it counted
+  int argc = expressionList(buffer, lookahead == TK_PAREN_R);
+
+  // call function n
+  emitFunctionCall(subroutineName, argc);
 
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
@@ -765,8 +770,8 @@ bool methodCall(Buffer *buffer, char *objectName)
   // needs to return how many expressions it counted
   int argc = expressionList(buffer, lookahead == TK_PAREN_R);
 
-  emitMethodCall(objectName, id2, argc);
   // call Class.method n
+  emitMethodCall(objectName, id2, argc);
 
   match(buffer, TK_PAREN_R);
 
@@ -902,10 +907,11 @@ bool ifStatement(Buffer *buffer)
    * goto SKIP
    * label ELSE
    *
-   * statements
+   * statements // possibly empty
    *
    * label SKIP
    */
+
 
   char elseBlock[LABEL_SIZE];
   initLabel(elseBlock);
@@ -945,6 +951,12 @@ bool ifStatement(Buffer *buffer)
     // just fall through to the done label
     match(buffer, TK_BRACE_R);
     emitSymbol("}");
+  } else {
+    // we didn't encounter an else, so we will
+    // not emit XML for that... but we will
+    // emit the vm code for the empty else to keep
+    // things simple
+    emitLabel(elseBlock);
   }
 
   emitLabel(done);

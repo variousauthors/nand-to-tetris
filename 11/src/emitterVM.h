@@ -38,5 +38,7 @@ void emitWhileLoopTest(char *done);
 void emitIfSkip(char *done);
 void emitIfCondition(char *elseBlock);
 void emitAllocateInstance(ScopedSymbolTable *table);
+void emitFunctionCall(char *objectName, int argc);
+void emitThisReference();
 
 #endif
