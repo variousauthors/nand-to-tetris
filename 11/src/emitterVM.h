@@ -37,4 +37,6 @@ void emitWhileLoopLoop(char *loop);
 void emitWhileLoopTest(char *done);
 void emitIfSkip(char *done);
 void emitIfCondition(char *elseBlock);
+void emitAllocateInstance(ScopedSymbolTable *table);
+
 #endif

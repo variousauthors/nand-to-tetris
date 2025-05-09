@@ -46,7 +46,7 @@ int parse(FILE *file)
 
   FILE *nullOut = fopen("/dev/null", "w");
   initEmitterVM(stdout);
-  initEmitterXML(nullOut);
+  initEmitterXML(stdout);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -1057,8 +1057,8 @@ bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, char *
   while (varDec(buffer, scopedSymbolTable))
     ;
 
-  debugTable(subroutineName, scopedSymbolTable);
   emitFunctionDeclaration(currentFile, subroutineName, varCount(scopedSymbolTable, VK_VAR));
+  // if this is a constructor we have to...
   statements(buffer);
 
   /** a return is just a statement, if we see
@@ -1136,33 +1136,67 @@ bool subroutineDec(Buffer *buffer)
     match(buffer, TK_FUNCTION);
     emitKeyword("function");
     returnType(buffer);
-    char *functionName = symtable[tokenval].lexptr;
+    char *subroutineName = symtable[tokenval].lexptr;
     match(buffer, TK_IDENTIFIER);
     match(buffer, TK_PAREN_L);
     emitSymbol("(");
     parameterList(buffer, &subroutineSymbolTable);
     match(buffer, TK_PAREN_R);
     emitSymbol(")");
-    subroutineBody(buffer, &subroutineSymbolTable, functionName);
+    match(buffer, TK_BRACE_L);
+    emitSubroutineBodyOpen();
+
+    // here we should just build up the symbol table
+    // and emit nothing
+    while (varDec(buffer, &subroutineSymbolTable))
+      ;
+
+    emitFunctionDeclaration(currentFile, subroutineName, varCount(&subroutineSymbolTable, VK_VAR));
+    statements(buffer);
+
+    /** a return is just a statement, if we see
+     * return; then the code gen will push constant 0
+     * if we see return expresssion; then code gen will
+     * push the result of that expression...
+     * so don't worry about it ;) */
+
+    match(buffer, TK_BRACE_R);
+    emitSymbol("}");
+    emitSubroutineBodyClose();
 
     break;
   }
   case TK_CONSTRUCTOR:
   {
-    // needs to allocate memory for the instance
-    // and return it
     match(buffer, TK_CONSTRUCTOR);
     emitKeyword("constructor");
     returnType(buffer);
     emitIdentifierSubroutine(identifierBuffer, "declaration");
-    char *functionName = symtable[tokenval].lexptr;
+    char *subroutineName = symtable[tokenval].lexptr;
     match(buffer, TK_IDENTIFIER);
     match(buffer, TK_PAREN_L);
     emitSymbol("(");
     parameterList(buffer, &subroutineSymbolTable);
     match(buffer, TK_PAREN_R);
     emitSymbol(")");
-    subroutineBody(buffer, &subroutineSymbolTable, functionName);
+    match(buffer, TK_BRACE_L);
+    emitSubroutineBodyOpen();
+
+    // here we should just build up the symbol table
+    // and emit nothing
+    while (varDec(buffer, &subroutineSymbolTable))
+      ;
+
+    emitFunctionDeclaration(currentFile, subroutineName, varCount(&subroutineSymbolTable, VK_VAR));
+
+    emitAllocateInstance(&classSymbolTable);
+
+    /** jack requires constructors to have return this; at the end */
+    statements(buffer);
+
+    match(buffer, TK_BRACE_R);
+    emitSymbol("}");
+    emitSubroutineBodyClose();
 
     break;
   }
@@ -1176,14 +1210,34 @@ bool subroutineDec(Buffer *buffer)
 
     returnType(buffer);
     emitIdentifierSubroutine(identifierBuffer, "declaration");
-    char *functionName = symtable[tokenval].lexptr;
+    char *subroutineName = symtable[tokenval].lexptr;
     match(buffer, TK_IDENTIFIER);
     match(buffer, TK_PAREN_L);
     emitSymbol("(");
     parameterList(buffer, &subroutineSymbolTable);
     match(buffer, TK_PAREN_R);
     emitSymbol(")");
-    subroutineBody(buffer, &subroutineSymbolTable, functionName);
+    match(buffer, TK_BRACE_L);
+    emitSubroutineBodyOpen();
+
+    // here we should just build up the symbol table
+    // and emit nothing
+    while (varDec(buffer, &subroutineSymbolTable))
+      ;
+
+    emitFunctionDeclaration(currentFile, subroutineName, varCount(&subroutineSymbolTable, VK_VAR));
+    // if this is a constructor we have to...
+    statements(buffer);
+
+    /** a return is just a statement, if we see
+     * return; then the code gen will push constant 0
+     * if we see return expresssion; then code gen will
+     * push the result of that expression...
+     * so don't worry about it ;) */
+
+    match(buffer, TK_BRACE_R);
+    emitSymbol("}");
+    emitSubroutineBodyClose();
 
     break;
   }

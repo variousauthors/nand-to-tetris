@@ -96,6 +96,18 @@ void emitVoidFunctionCleanup()
   fprintf(outfile, "%spop temp 0\n", indentation);
 }
 
+void emitAllocateInstance(ScopedSymbolTable *table)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+  int fieldsCount = varCount(table, VK_FIELD);
+
+  // allocate n bytes where n is the number of fields on the class
+  fprintf(outfile, "%spush constant %d\n", indentation, fieldsCount);
+  fprintf(outfile, "%scall Memory.alloc 1\n", indentation);
+  fprintf(outfile, "%spop pointer 0\n", indentation);
+}
+
 void emitFunctionDeclaration(char *className, char *functionName, int argc)
 {
   indent++;
