@@ -55,7 +55,8 @@ int insert(char s[], int tok, int value)
 }
 
 /** == Scoped Symbol Table ==  */
-void startSubroutine(ScopedSymbolTable *table) {
+void startSubroutine(ScopedSymbolTable *table)
+{
   table->currentIndex = 0;
   table->length = 0;
   table->nextStatic = 0;
@@ -64,7 +65,8 @@ void startSubroutine(ScopedSymbolTable *table) {
   table->nextVar = 0;
 }
 
-void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind) {
+void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind)
+{
   // TODO bounds checking on the underlying array
 
   table->entries[table->currentIndex].name = name;
@@ -73,22 +75,26 @@ void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, Vari
 
   switch (kind)
   {
-  case VK_STATIC: { 
+  case VK_STATIC:
+  {
     table->entries[table->currentIndex].position = table->nextStatic;
     table->nextStatic++;
     break;
   }
-  case VK_FIELD: { 
+  case VK_FIELD:
+  {
     table->entries[table->currentIndex].position = table->nextField;
     table->nextField++;
     break;
   }
-  case VK_ARG: { 
+  case VK_ARG:
+  {
     table->entries[table->currentIndex].position = table->nextArg;
     table->nextArg++;
     break;
   }
-  case VK_VAR: { 
+  case VK_VAR:
+  {
     table->entries[table->currentIndex].position = table->nextVar;
     table->nextVar++;
     break;
@@ -103,9 +109,12 @@ void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, Vari
   table->length++;
 }
 
-int indexOf(ScopedSymbolTable *table, char *name) {
-  for (int i = 0; i < table->length; i++) {
-    if (strcmp(name, table->entries[i].name->lexptr) == 0) {
+int indexOf(ScopedSymbolTable *table, char *name)
+{
+  for (int i = 0; i < table->length; i++)
+  {
+    if (strcmp(name, table->entries[i].name->lexptr) == 0)
+    {
       return i;
     }
   }
@@ -113,11 +122,14 @@ int indexOf(ScopedSymbolTable *table, char *name) {
   return -1;
 }
 
-int varCount(ScopedSymbolTable *table, VariableKind kind) {
-  int count;
+int varCount(ScopedSymbolTable *table, VariableKind kind)
+{
+  int count = 0;
 
-  for (int i = 0; i < table->length; i++) {
-    if (table->entries[i].kind) {
+  for (int i = 0; i < table->length; i++)
+  {
+    if (table->entries[i].kind == kind)
+    {
       count++;
     }
   }
@@ -145,4 +157,12 @@ ScopedSymbolTableEntry *getIndexFromGlobalTables(char *identifier)
   }
 
   return 0;
+}
+
+void debugTable(char *context, ScopedSymbolTable *table)
+{
+  for (int i = 0; i < table->length; i++)
+  {
+    fprintf(stderr, "in %s -- name: %s; kind: %d; type: %s; position: %d\n", context, table->entries[i].name->lexptr, table->entries[i].kind, table->entries[i].type->lexptr, table->entries[i].position);
+  }
 }

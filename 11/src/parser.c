@@ -15,7 +15,8 @@ Token lookahead;
 int currentAddress = 0;
 int currentLabel = 0;
 
-int nextLabel () {
+int nextLabel()
+{
   return currentLabel++;
 }
 
@@ -45,7 +46,7 @@ int parse(FILE *file)
 
   FILE *nullOut = fopen("/dev/null", "w");
   initEmitterVM(stdout);
-  initEmitterXML(stdout);
+  initEmitterXML(nullOut);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -86,11 +87,13 @@ bool identifierSubroutineDeclaration(Buffer *buffer)
   return true;
 }
 
-void defineVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry) {
+void defineVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
+{
   defineScopedSymbol(table, entry->name, entry->type, entry->kind);
 }
 
-void nameVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry) {
+void nameVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
+{
   entry->name = &symtable[tokenval];
 }
 
@@ -812,9 +815,9 @@ bool whileStatement(Buffer *buffer)
    *   push condition
    *   not
    *   if-goto compilationUnit_1
-   * 
+   *
    *   statements
-   * 
+   *
    *   goto compilationUnit_0
    * label compilationUnit_1
    */
@@ -893,14 +896,14 @@ bool ifStatement(Buffer *buffer)
    * expression
    * not
    * if-goto ELSE
-   * 
+   *
    * statements
-   * 
+   *
    * goto SKIP
    * label ELSE
-   * 
+   *
    * statements
-   * 
+   *
    * label SKIP
    */
 
@@ -960,7 +963,8 @@ bool letStatement(Buffer *buffer)
 
   ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(identifierBuffer);
 
-  if (!entry) {
+  if (!entry)
+  {
     fprintf(stderr, "tried to assign to %s\n", identifierBuffer);
     error("while parsing let statement");
   }
@@ -1043,19 +1047,23 @@ bool statements(Buffer *buffer)
   return true;
 }
 
-bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
+bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, char *subroutineName)
 {
   match(buffer, TK_BRACE_L);
   emitSubroutineBodyOpen();
 
+  // here we should just build up the symbol table
+  // and emit nothing
   while (varDec(buffer, scopedSymbolTable))
     ;
 
+  debugTable(subroutineName, scopedSymbolTable);
+  emitFunctionDeclaration(currentFile, subroutineName, varCount(scopedSymbolTable, VK_VAR));
   statements(buffer);
 
   /** a return is just a statement, if we see
    * return; then the code gen will push constant 0
-   * if we see return expresssion; then code gen will 
+   * if we see return expresssion; then code gen will
    * push the result of that expression...
    * so don't worry about it ;) */
 
@@ -1135,8 +1143,7 @@ bool subroutineDec(Buffer *buffer)
     parameterList(buffer, &subroutineSymbolTable);
     match(buffer, TK_PAREN_R);
     emitSymbol(")");
-    emitFunctionDeclaration(currentFile, functionName, subroutineSymbolTable.length);
-    subroutineBody(buffer, &subroutineSymbolTable);
+    subroutineBody(buffer, &subroutineSymbolTable, functionName);
 
     break;
   }
@@ -1155,8 +1162,7 @@ bool subroutineDec(Buffer *buffer)
     parameterList(buffer, &subroutineSymbolTable);
     match(buffer, TK_PAREN_R);
     emitSymbol(")");
-    emitFunctionDeclaration(currentFile, functionName, subroutineSymbolTable.length);
-    subroutineBody(buffer, &subroutineSymbolTable);
+    subroutineBody(buffer, &subroutineSymbolTable, functionName);
 
     break;
   }
@@ -1177,8 +1183,7 @@ bool subroutineDec(Buffer *buffer)
     parameterList(buffer, &subroutineSymbolTable);
     match(buffer, TK_PAREN_R);
     emitSymbol(")");
-    emitFunctionDeclaration(currentFile, functionName, subroutineSymbolTable.length);
-    subroutineBody(buffer, &subroutineSymbolTable);
+    subroutineBody(buffer, &subroutineSymbolTable, functionName);
 
     break;
   }

@@ -52,6 +52,8 @@ void startSubroutine(ScopedSymbolTable *table);
 /** accepts global symbols and defines scoped symbols */
 void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind);
 int indexOf(ScopedSymbolTable *table, char *name);
+void debugTable(char *context, ScopedSymbolTable *table);
+int varCount(ScopedSymbolTable *table, VariableKind kind);
 
 ScopedSymbolTableEntry *getIndexFromGlobalTables(char *identifier);
 
