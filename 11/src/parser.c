@@ -423,6 +423,7 @@ bool term(Buffer *buffer)
   case TK_FALSE:
   {
     match(buffer, TK_FALSE);
+    emitTermBool(false);
     emitKeyword("false");
     break;
   }
@@ -1044,6 +1045,8 @@ bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
     ;
 
   statements(buffer);
+
+  // what if there is no explicit return
 
   match(buffer, TK_BRACE_R);
   emitSymbol("}");
