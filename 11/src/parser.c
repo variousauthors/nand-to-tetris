@@ -86,17 +86,15 @@ bool identifierSubroutineDeclaration(Buffer *buffer)
   return true;
 }
 
-bool varNameIdentifier(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
-{
-  entry->name = &symtable[tokenval];
+void defineVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry) {
   defineScopedSymbol(table, entry->name, entry->type, entry->kind);
-
-  match(buffer, TK_IDENTIFIER);
-  emitIdentifier(identifierBuffer, "declaration");
-  return true;
 }
 
-bool additionalVarName(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, ScopedSymbolTableEntry *entry)
+void nameVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry) {
+  entry->name = &symtable[tokenval];
+}
+
+bool additionalVarName(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
 {
   if (lookahead != TK_COMMA)
   {
@@ -106,7 +104,10 @@ bool additionalVarName(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, Sco
   match(buffer, TK_COMMA);
   emitSymbol(",");
 
-  varNameIdentifier(buffer, scopedSymbolTable, entry);
+  nameVariable(buffer, table, entry);
+  defineVariable(buffer, table, entry);
+  match(buffer, TK_IDENTIFIER);
+  emitVariableDefinitionXML(identifierBuffer);
 
   return true;
 }
@@ -213,7 +214,10 @@ bool parameter(Buffer *buffer, ScopedSymbolTable *table)
   entry.kind = VK_ARG;
 
   varType(buffer, &entry);
-  varNameIdentifier(buffer, table, &entry);
+  nameVariable(buffer, table, &entry);
+  defineVariable(buffer, table, &entry);
+  match(buffer, TK_IDENTIFIER);
+  emitVariableDefinitionXML(identifierBuffer);
 
   return true;
 }
@@ -251,7 +255,10 @@ bool varDecDetails(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEn
 {
   // type varName (, varName)* ;
   varType(buffer, entry);
-  varNameIdentifier(buffer, table, entry);
+  nameVariable(buffer, table, entry);
+  defineVariable(buffer, table, entry);
+  match(buffer, TK_IDENTIFIER);
+  emitVariableDefinitionXML(identifierBuffer);
 
   while (additionalVarName(buffer, table, entry))
     ;
@@ -485,7 +492,7 @@ bool term(Buffer *buffer)
     if (lookahead == TK_BRACKET_L)
     {
       // varName[expression]
-      emitIdentifier(id, "reference");
+      emitVariableReferenceXML(id);
 
       match(buffer, TK_BRACKET_L);
       emitSymbol("[");
@@ -506,7 +513,7 @@ bool term(Buffer *buffer)
       // varName
       ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(id);
       emitVariableReference(entry);
-      emitIdentifier(id, "reference");
+      emitVariableReferenceXML(id);
     }
 
     break;
@@ -958,7 +965,7 @@ bool letStatement(Buffer *buffer)
     error("while parsing let statement");
   }
 
-  emitIdentifier(identifierBuffer, "reference");
+  emitVariableReferenceXML(identifierBuffer);
   match(buffer, TK_IDENTIFIER);
 
   if (lookahead == TK_BRACKET_L)
@@ -1046,7 +1053,11 @@ bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable)
 
   statements(buffer);
 
-  // what if there is no explicit return
+  /** a return is just a statement, if we see
+   * return; then the code gen will push constant 0
+   * if we see return expresssion; then code gen will 
+   * push the result of that expression...
+   * so don't worry about it ;) */
 
   match(buffer, TK_BRACE_R);
   emitSymbol("}");

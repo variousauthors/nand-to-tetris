@@ -33,7 +33,8 @@ static void makeIndentation(char *indentation)
   indentation[i] = '\0';
 }
 
-void initEmitterXML(FILE *out) {
+void initEmitterXML(FILE *out)
+{
   outfile = out;
 }
 
@@ -173,7 +174,7 @@ char *getCategory(VariableKind kind)
   }
 }
 
-void emitIdentifier(char *identifier, char *mode)
+void emitVariableDefinitionXML(char *identifier)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
@@ -191,6 +192,28 @@ void emitIdentifier(char *identifier, char *mode)
   }
   else
   {
-    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, mode, entry->name->lexptr);
+    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, "declaration", entry->name->lexptr);
+  }
+}
+
+void emitVariableReferenceXML(char *identifier)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // first check the subroutine table
+  ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(identifier);
+
+  if (entry == 0)
+  {
+    // it might be a class or subroutine
+    int index = lookup(identifier);
+
+    fprintf(stderr, "encountered unidentified symbol %s\n", identifier);
+    error("while emitting identifier definition");
+  }
+  else
+  {
+    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, "reference", entry->name->lexptr);
   }
 }
