@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "emitterVM.h"
 #include "error.h"
 #include "symbol.h"
@@ -207,6 +208,23 @@ void emitIfCondition(char *elseBlock)
 
   fprintf(outfile, "%snot\n", indentation);
   fprintf(outfile, "%sif-goto %s\n", indentation, elseBlock);
+}
+
+void emitStringDefinition(char *str)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  size_t length = strlen(str);
+
+  fprintf(outfile, "%spush String.new %zu\n", indentation, length);
+
+  for (int i = 0; i < length; i++)
+  {
+    char ch = str[i];
+    fprintf(outfile, "%spush constant %d\n", indentation, ch);
+    fprintf(outfile, "%spush String.appendChar %d\n", indentation, 2);
+  }
 }
 
 void emitIfSkip(char *done)

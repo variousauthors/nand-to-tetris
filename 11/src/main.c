@@ -42,7 +42,7 @@ bool isVMFile(char *name, int namelen)
   return name[namelen - 1] == 'k' && name[namelen - 2] == 'c' && name[namelen - 3] == 'a' && name[namelen - 4] == 'j' && name[namelen - 5] == '.';
 }
 
-int parseSingleFile(char *path, char *outpath)
+int parseSingleFile(char *path)
 {
   // fill the data
   FILE *file = fopen(path, "r");
@@ -53,18 +53,9 @@ int parseSingleFile(char *path, char *outpath)
     return 1;
   }
 
-  FILE *outfile = fopen(outpath, "w");
-
-  if (outfile == NULL)
-  {
-    perror("Error opening outfile");
-    return 1;
-  }
-
   init();
-  int code = parse(file, outfile);
+  int code = parse(file);
   fclose(file);
-  fclose(outfile);
   return code;
 }
 
@@ -96,7 +87,7 @@ int main(int argc, char *argv[])
     currentFile = moduleName;
 
     fprintf(stderr, "processing %s -> %s\n", path, out_path);
-    return parseSingleFile(path, out_path);
+    return parseSingleFile(path);
   }
   else if (S_ISDIR(path_stat.st_mode))
   {
@@ -133,13 +124,8 @@ int main(int argc, char *argv[])
       char full_path[PATH_MAX];
       snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
 
-      char out_path[PATH_MAX];
-      snprintf(out_path, sizeof(out_path), "%s/%s", path, entry->d_name);
-
-      makeOutFileName(out_path);
-
-      fprintf(stderr, "processing %s -> %s\n", full_path, out_path);
-      code |= parseSingleFile(full_path, out_path);
+      fprintf(stderr, "processing %s\n", full_path);
+      code |= parseSingleFile(full_path);
     }
 
     closedir(dir);

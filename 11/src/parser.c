@@ -34,15 +34,15 @@ bool instanceMethodCall(Buffer *buffer, char *subroutineName);
 bool methodCall(Buffer *buffer, char *subjectName);
 bool term(Buffer *buffer);
 
-int parse(FILE *file, FILE *out)
+int parse(FILE *file)
 {
   // we setbuf incase we want printf to
   // output before stuff like segfaults happen
   // setbuf(stdout, NULL);
 
   FILE *nullOut = fopen("/dev/null", "w");
-  initEmitterVM(out);
-  initEmitterXML(nullOut);
+  initEmitterVM(stdout);
+  initEmitterXML(stdout);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -342,6 +342,7 @@ bool term(Buffer *buffer)
     // we emit first because string buffer might get
     // overwritten if we match first
     emitXMLPrimitive("stringConstant", identifierBuffer);
+    emitStringDefinition(identifierBuffer);
     match(buffer, TK_STRING);
     break;
   }
@@ -1008,25 +1009,56 @@ bool letStatement(Buffer *buffer)
 
   if (lookahead == TK_BRACKET_L)
   {
-    // optional array expression
+    // this is an array assignment 
     match(buffer, TK_BRACKET_L);
     emitSymbol("[");
-    expression(buffer);
+    expression(buffer); // pushes the index to the stack
     emitSymbol("]");
     match(buffer, TK_BRACKET_R);
+
+    match(buffer, TK_EQUAL);
+    emitSymbol("=");
+    expression(buffer); // pushes the value to store
+
+    // now we have on the stack something like
+    // i <-- the index we want to store into
+    // x <-- the value of the expression to store
+
+    // but this is backwards so we are going to
+    // pop temp 0 // store x
+    // pop temp 1 // store i
+    // push temp 0
+    // push temp 1 // swap them
+
+    // if this is an array assignment we need to
+    // push entry <- get the base address
+    // add <-- base address + i
+    // pop pointer 1 ; align that
+    // the value we wanted to push is already on the stack
+    // because we evaluated it (see below)
+    // pop that 0
+
+    match(buffer, TK_SEMI);
+    emitSymbol(";");
+
+    emitXMLCloseTag("letStatement");
   }
+  else
+  {
+    // we have just a scalar variable described
+    // by entry, so we pop into it
+    match(buffer, TK_EQUAL);
+    emitSymbol("=");
+    expression(buffer);
 
-  match(buffer, TK_EQUAL);
-  emitSymbol("=");
-  expression(buffer);
+    // pop into the variable
+    emitVariableAssignment(entry);
 
-  // pop into the variable
-  emitVariableAssignment(entry);
+    match(buffer, TK_SEMI);
+    emitSymbol(";");
 
-  match(buffer, TK_SEMI);
-  emitSymbol(";");
-
-  emitXMLCloseTag("letStatement");
+    emitXMLCloseTag("letStatement");
+  }
 
   return true;
 }

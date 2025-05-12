@@ -24,6 +24,7 @@ typedef enum EM_OP
 
 void emitOperation(EmitterOp op);
 void emitInstanceForCall(ScopedSymbolTableEntry *entry);
+void emitStringDefinition(char *str);
 void emitTermBool(bool value);
 void emitTermInteger(int n);
 void emitMethodCall(char *objectName, char *id2, int argc);
