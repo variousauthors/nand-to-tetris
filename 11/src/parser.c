@@ -1,13 +1,9 @@
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stddef.h>
 #include <sys/stat.h>
 
 #include "buffer.h"
 #include "error.h"
 #include "tokenizer.h"
-#include "parser.h"
 #include "emitterXML.h"
 #include "emitterVM.h"
 
@@ -34,19 +30,19 @@ bool statements(Buffer *buffer);
 bool match(Buffer *buffer, Token t);
 bool class(Buffer *buffer);
 bool expression(Buffer *buffer);
-bool functionCall(Buffer *buffer, char *subroutineName);
+bool instanceMethodCall(Buffer *buffer, char *subroutineName);
 bool methodCall(Buffer *buffer, char *subjectName);
 bool term(Buffer *buffer);
 
-int parse(FILE *file)
+int parse(FILE *file, FILE *out)
 {
-  // we setbuf because we want printf to
+  // we setbuf incase we want printf to
   // output before stuff like segfaults happen
-  setbuf(stdout, NULL);
+  // setbuf(stdout, NULL);
 
   FILE *nullOut = fopen("/dev/null", "w");
-  initEmitterVM(stdout);
-  initEmitterXML(stdout);
+  initEmitterVM(out);
+  initEmitterXML(nullOut);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -510,7 +506,7 @@ bool term(Buffer *buffer)
     }
     else if (lookahead == TK_PAREN_L)
     {
-      functionCall(buffer, id);
+      instanceMethodCall(buffer, id);
     }
     else
     {
@@ -738,18 +734,23 @@ int expressionList(Buffer *buffer, bool isEmpty)
   return count;
 }
 
-bool functionCall(Buffer *buffer, char *subroutineName)
+/** this is for syntax like `do draw()` where draw
+ * is a method on the current instance */
+bool instanceMethodCall(Buffer *buffer, char *subroutineName)
 {
   // subroutineName ( expressionList )
   emitIdentifierSubroutine(subroutineName, "reference");
   match(buffer, TK_PAREN_L);
   emitSymbol("(");
 
+  // push the current instance
+  emitThisReference();
+
   // needs to return how many expressions it counted
-  int argc = expressionList(buffer, lookahead == TK_PAREN_R);
+  int argc = expressionList(buffer, lookahead == TK_PAREN_R) + 1;
 
   // call function n
-  emitFunctionCall(subroutineName, argc);
+  emitMethodCall(currentFile, subroutineName, argc);
 
   match(buffer, TK_PAREN_R);
   emitSymbol(")");
@@ -757,23 +758,42 @@ bool functionCall(Buffer *buffer, char *subroutineName)
   return true;
 }
 
+/** this is for syntax like `do Bob.draw()` or `do something.draw()`
+ * where draw is either a method on a class or an instance of another
+ * class */
 bool methodCall(Buffer *buffer, char *objectName)
 {
   // ( className | varName ) . subroutineName ( expressionList )
   match(buffer, TK_DOT);
-  // (className | varName) . subroutineName ( expressionList )
-  char *id2 = symtable[tokenval].lexptr;
+  char *subroutineName = symtable[tokenval].lexptr;
 
   match(buffer, TK_IDENTIFIER);
   match(buffer, TK_PAREN_L);
 
-  // needs to return how many expressions it counted
+  // push the object in question onto the stack
+  ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(objectName);
+
   int argc = expressionList(buffer, lookahead == TK_PAREN_R);
 
-  // call Class.method n
-  emitMethodCall(objectName, id2, argc);
+  if (entry)
+  {
+    // we need to put the implicit this on the stack
+    emitInstanceForCall(entry);
 
-  match(buffer, TK_PAREN_R);
+    argc++;
+
+    // call Class.method n
+    emitMethodCall(entry->type->lexptr, subroutineName, argc);
+
+    match(buffer, TK_PAREN_R);
+  }
+  else
+  {
+    // call Class.method n
+    emitMethodCall(objectName, subroutineName, argc);
+
+    match(buffer, TK_PAREN_R);
+  }
 
   return true;
 }
@@ -794,7 +814,8 @@ bool subroutineCall(Buffer *buffer)
   }
   else if (lookahead == TK_PAREN_L)
   {
-    return functionCall(buffer, id);
+    // actually this is "local method call" right?
+    return instanceMethodCall(buffer, id);
   }
   else
   {
@@ -912,7 +933,6 @@ bool ifStatement(Buffer *buffer)
    * label SKIP
    */
 
-
   char elseBlock[LABEL_SIZE];
   initLabel(elseBlock);
   char done[LABEL_SIZE];
@@ -951,7 +971,9 @@ bool ifStatement(Buffer *buffer)
     // just fall through to the done label
     match(buffer, TK_BRACE_R);
     emitSymbol("}");
-  } else {
+  }
+  else
+  {
     // we didn't encounter an else, so we will
     // not emit XML for that... but we will
     // emit the vm code for the empty else to keep
@@ -1059,32 +1081,6 @@ bool statements(Buffer *buffer)
   return true;
 }
 
-bool subroutineBody(Buffer *buffer, ScopedSymbolTable *scopedSymbolTable, char *subroutineName)
-{
-  match(buffer, TK_BRACE_L);
-  emitSubroutineBodyOpen();
-
-  // here we should just build up the symbol table
-  // and emit nothing
-  while (varDec(buffer, scopedSymbolTable))
-    ;
-
-  emitFunctionDeclaration(currentFile, subroutineName, varCount(scopedSymbolTable, VK_VAR));
-  // if this is a constructor we have to...
-  statements(buffer);
-
-  /** a return is just a statement, if we see
-   * return; then the code gen will push constant 0
-   * if we see return expresssion; then code gen will
-   * push the result of that expression...
-   * so don't worry about it ;) */
-
-  match(buffer, TK_BRACE_R);
-  emitSymbol("}");
-  emitSubroutineBodyClose();
-  return true;
-}
-
 bool classVarDec(Buffer *buffer)
 {
   if (lookahead != TK_STATIC && lookahead != TK_FIELD)
@@ -1139,7 +1135,7 @@ bool subroutineDec(Buffer *buffer)
 
   ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
   subroutineSymbolTable.entries = subroutineSymbolTableEntries;
-  startSubroutine(&subroutineSymbolTable);
+  clearSymbolTable(&subroutineSymbolTable);
 
   switch (lookahead)
   {
@@ -1214,9 +1210,6 @@ bool subroutineDec(Buffer *buffer)
   }
   case TK_METHOD:
   {
-    // methods need to
-    // push argument 0
-    // pop pointer 0
     match(buffer, TK_METHOD);
     emitKeyword("method");
 
@@ -1238,7 +1231,10 @@ bool subroutineDec(Buffer *buffer)
       ;
 
     emitFunctionDeclaration(currentFile, subroutineName, varCount(&subroutineSymbolTable, VK_VAR));
-    // if this is a constructor we have to...
+    // methods need to slip this into argument 0
+    // push argument 0
+    // pop pointer 0
+    emitImplicitThis();
     statements(buffer);
 
     /** a return is just a statement, if we see
@@ -1266,11 +1262,13 @@ bool subroutineDec(Buffer *buffer)
 
 bool class(Buffer *buffer)
 {
+
   int tempval;
   currentLabel = 0;
 
   ScopedSymbolTableEntry classSymbolTableEntries[10];
   classSymbolTable.entries = classSymbolTableEntries;
+  clearSymbolTable(&classSymbolTable);
 
   // class className { classVarDec* subroutineDec* }
 

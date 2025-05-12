@@ -11,10 +11,22 @@
 
 char *currentFile;
 
+void makeOutFileName(const char *filename) {
+  char *dot = strrchr(filename, '.');
+  if (dot != NULL)
+  {
+    *dot++ = '.';
+    *dot++ = 'v';
+    *dot++ = 'm';
+    *dot++ = '\0';
+  }
+
+  return;
+}
+
 void getModuleName(const char *filename, char *out, size_t outlen)
 {
   strncpy(out, filename, outlen);
-  out[sizeof(out) - 1] = '\0'; // ensure null-terminated
 
   char *dot = strrchr(out, '.');
   if (dot != NULL)
@@ -30,7 +42,7 @@ bool isVMFile(char *name, int namelen)
   return name[namelen - 1] == 'k' && name[namelen - 2] == 'c' && name[namelen - 3] == 'a' && name[namelen - 4] == 'j' && name[namelen - 5] == '.';
 }
 
-int parseSingleFile(char *path)
+int parseSingleFile(char *path, char *outpath)
 {
   // fill the data
   FILE *file = fopen(path, "r");
@@ -41,9 +53,18 @@ int parseSingleFile(char *path)
     return 1;
   }
 
+  FILE *outfile = fopen(outpath, "w");
+
+  if (outfile == NULL)
+  {
+    perror("Error opening outfile");
+    return 1;
+  }
+
   init();
-  int code = parse(file);
+  int code = parse(file, outfile);
   fclose(file);
+  fclose(outfile);
   return code;
 }
 
@@ -69,9 +90,13 @@ int main(int argc, char *argv[])
     char moduleName[PATH_MAX];
     getModuleName(basename(path), moduleName, PATH_MAX);
 
+    char out_path[PATH_MAX];
+    snprintf(out_path, sizeof(out_path), "%s/%s", path, "");
+
     currentFile = moduleName;
 
-    return parseSingleFile(path);
+    fprintf(stderr, "processing %s -> %s\n", path, out_path);
+    return parseSingleFile(path, out_path);
   }
   else if (S_ISDIR(path_stat.st_mode))
   {
@@ -108,7 +133,13 @@ int main(int argc, char *argv[])
       char full_path[PATH_MAX];
       snprintf(full_path, sizeof(full_path), "%s/%s", path, entry->d_name);
 
-      code |= parseSingleFile(full_path);
+      char out_path[PATH_MAX];
+      snprintf(out_path, sizeof(out_path), "%s/%s", path, entry->d_name);
+
+      makeOutFileName(out_path);
+
+      fprintf(stderr, "processing %s -> %s\n", full_path, out_path);
+      code |= parseSingleFile(full_path, out_path);
     }
 
     closedir(dir);

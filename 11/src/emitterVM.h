@@ -23,6 +23,7 @@ typedef enum EM_OP
 } EmitterOp;
 
 void emitOperation(EmitterOp op);
+void emitInstanceForCall(ScopedSymbolTableEntry *entry);
 void emitTermBool(bool value);
 void emitTermInteger(int n);
 void emitMethodCall(char *objectName, char *id2, int argc);
@@ -40,5 +41,6 @@ void emitIfCondition(char *elseBlock);
 void emitAllocateInstance(ScopedSymbolTable *table);
 void emitFunctionCall(char *objectName, int argc);
 void emitThisReference();
+void emitImplicitThis ();
 
 #endif

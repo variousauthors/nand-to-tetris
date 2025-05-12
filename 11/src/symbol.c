@@ -55,7 +55,7 @@ int insert(char s[], int tok, int value)
 }
 
 /** == Scoped Symbol Table ==  */
-void startSubroutine(ScopedSymbolTable *table)
+void clearSymbolTable(ScopedSymbolTable *table)
 {
   table->currentIndex = 0;
   table->length = 0;
@@ -163,6 +163,9 @@ void debugTable(char *context, ScopedSymbolTable *table)
 {
   for (int i = 0; i < table->length; i++)
   {
-    fprintf(stderr, "in %s -- name: %s; kind: %d; type: %s; position: %d\n", context, table->entries[i].name->lexptr, table->entries[i].kind, table->entries[i].type->lexptr, table->entries[i].position);
+    fprintf(stderr, "in %s -- name: %s\n", context, table->entries[i].name->lexptr);
+    fprintf(stderr, "in %s -- kind: %d\n", context, table->entries[i].kind);
+    fprintf(stderr, "in %s -- type: %s\n", context, table->entries[i].type->lexptr);
+    fprintf(stderr, "in %s -- position: %d\n", context, table->entries[i].position);
   }
 }

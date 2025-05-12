@@ -8,3 +8,7 @@ bool error(const char *m)
   exit(1);
   return false;
 }
+
+void problem(int n) {
+  fprintf(stderr, "%d\n", n);
+}

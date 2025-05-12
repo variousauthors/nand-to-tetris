@@ -80,7 +80,8 @@ void emitVariableReference(ScopedSymbolTableEntry *entry)
   fprintf(outfile, "%spush %s %d\n", indentation, getSegment(entry->kind), entry->position);
 }
 
-void emitThisReference() {
+void emitThisReference()
+{
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
 
@@ -101,6 +102,47 @@ void emitVoidFunctionCleanup()
   makeIndentation(indentation);
 
   fprintf(outfile, "%spop temp 0\n", indentation);
+}
+
+void emitInstanceForCall(ScopedSymbolTableEntry *entry)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  switch (entry->kind)
+  {
+  case VK_FIELD:
+  {
+    fprintf(outfile, "%spush this %d\n", indentation, entry->position);
+    break;
+  }
+  case VK_STATIC:
+  {
+    fprintf(outfile, "%spush static %d\n", indentation, entry->position);
+    break;
+  }
+  case VK_ARG:
+  {
+    fprintf(outfile, "%spush argument %d\n", indentation, entry->position);
+    break;
+  }
+  case VK_VAR:
+  {
+    fprintf(outfile, "%spush local %d\n", indentation, entry->position);
+    break;
+  }
+  default:
+    error("failed to emit instance for call");
+  }
+}
+
+void emitImplicitThis()
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%spush argument 0\n", indentation);
+  fprintf(outfile, "%spop pointer 0\n", indentation);
 }
 
 void emitAllocateInstance(ScopedSymbolTable *table)

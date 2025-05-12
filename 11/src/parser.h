@@ -7,7 +7,7 @@
 #include "ir.h"
 
 // will allocate its own buffer
-int parse(FILE *infile);
+int parse(FILE *infile, FILE *out);
 
 bool token(Buffer *buffer, IR *ir);
 
