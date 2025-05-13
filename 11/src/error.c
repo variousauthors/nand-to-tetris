@@ -9,6 +9,12 @@ bool error(const char *m)
   return false;
 }
 
-void problem(int n) {
+void say(char *message)
+{
+  fprintf(stderr, "%s\n", message);
+}
+
+void problem(int n)
+{
   fprintf(stderr, "%d\n", n);
 }

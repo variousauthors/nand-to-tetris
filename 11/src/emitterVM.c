@@ -143,7 +143,7 @@ void emitSwapStack()
  *
  * this function is only going to perform the assignment
  */
-void emitArrayAssignment(ScopedSymbolTableEntry *entry)
+void emitArrayElementAssignment(ScopedSymbolTableEntry *entry)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
@@ -155,10 +155,34 @@ void emitArrayAssignment(ScopedSymbolTableEntry *entry)
   fprintf(outfile, "%sadd\n", indentation);
   // pop pointer 1 ; align that to base address + i
   fprintf(outfile, "%spop pointer 1\n", indentation);
-  // the value we wanted to push 
+  // the value we wanted to push
   // is already on the stack (see precondition)
   // so we pop it into the array
   fprintf(outfile, "%spop that 0\n", indentation);
+}
+
+/** pre-condition
+ * we have already emit instructions which
+ * 1. push the index
+ *
+ * this function is only going push 
+ * the value at that index to the stack
+ */
+void emitArrayElementReference(ScopedSymbolTableEntry *entry)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // push entry <- get the base address
+  emitPushScopedTableEntry(entry);
+
+  // add <-- base address + i
+  fprintf(outfile, "%sadd\n", indentation);
+  // pop pointer 1 ; align that to base address + i
+  fprintf(outfile, "%spop pointer 1\n", indentation);
+
+  // push the value at that index to the stack
+  fprintf(outfile, "%spush that 0\n", indentation);
 }
 
 void emitVariableAssignment(ScopedSymbolTableEntry *entry)
@@ -262,13 +286,14 @@ void emitStringDefinition(char *str)
 
   size_t length = strlen(str);
 
-  fprintf(outfile, "%spush String.new %zu\n", indentation, length);
+  fprintf(outfile, "%spush constant %zu\n", indentation, length);
+  fprintf(outfile, "%scall String.new %d\n", indentation, 1);
 
   for (int i = 0; i < length; i++)
   {
     char ch = str[i];
     fprintf(outfile, "%spush constant %d\n", indentation, ch);
-    fprintf(outfile, "%spush String.appendChar %d\n", indentation, 2);
+    fprintf(outfile, "%scall String.appendChar %d\n", indentation, 2);
   }
 }
 
@@ -339,7 +364,7 @@ void emitOperation(EmitterOp op)
   }
   case EM_DIV:
   {
-    fprintf(outfile, "%sMath.divide\n", indentation);
+    fprintf(outfile, "%scall Math.divide 2\n", indentation);
     break;
   }
   case EM_AND:

@@ -42,7 +42,7 @@ int parse(FILE *file)
 
   FILE *nullOut = fopen("/dev/null", "w");
   initEmitterVM(stdout);
-  initEmitterXML(stdout);
+  initEmitterXML(nullOut);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -500,6 +500,9 @@ bool term(Buffer *buffer)
       expression(buffer);
       match(buffer, TK_BRACKET_R);
       emitSymbol("]");
+
+      ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(id);
+      emitArrayElementReference(entry);
     }
     else if (lookahead == TK_DOT)
     {
@@ -1028,7 +1031,7 @@ bool letStatement(Buffer *buffer)
     emitSwapStack();
 
     // if this is an array assignment we need to
-    emitArrayAssignment(entry);
+    emitArrayElementAssignment(entry);
 
     match(buffer, TK_SEMI);
     emitSymbol(";");

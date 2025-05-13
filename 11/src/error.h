@@ -5,5 +5,6 @@
 
 bool error(const char *msg);
 void problem(int n);
+void say(char *message);
 
 #endif
