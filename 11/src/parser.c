@@ -1025,18 +1025,10 @@ bool letStatement(Buffer *buffer)
     // x <-- the value of the expression to store
 
     // but this is backwards so we are going to
-    // pop temp 0 // store x
-    // pop temp 1 // store i
-    // push temp 0
-    // push temp 1 // swap them
+    emitSwapStack();
 
     // if this is an array assignment we need to
-    // push entry <- get the base address
-    // add <-- base address + i
-    // pop pointer 1 ; align that
-    // the value we wanted to push is already on the stack
-    // because we evaluated it (see below)
-    // pop that 0
+    emitArrayAssignment(entry);
 
     match(buffer, TK_SEMI);
     emitSymbol(";");

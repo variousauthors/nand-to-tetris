@@ -31,6 +31,8 @@ void emitMethodCall(char *objectName, char *id2, int argc);
 void emitVoidReturnValue();
 void emitReturn();
 void emitFunctionDeclaration(char *className, char *functionName, int argc);
+void emitSwapStack();
+void emitArrayAssignment(ScopedSymbolTableEntry *entry);
 void emitVariableAssignment(ScopedSymbolTableEntry *entry);
 void emitVariableReference(ScopedSymbolTableEntry *entry);
 void emitVoidFunctionCleanup();

@@ -89,23 +89,10 @@ void emitThisReference()
   fprintf(outfile, "%spush pointer 0\n", indentation);
 }
 
-void emitVariableAssignment(ScopedSymbolTableEntry *entry)
-{
-  char indentation[indentSize(indent)];
-  makeIndentation(indentation);
-
-  fprintf(outfile, "%spop %s %d\n", indentation, getSegment(entry->kind), entry->position);
-}
-
-void emitVoidFunctionCleanup()
-{
-  char indentation[indentSize(indent)];
-  makeIndentation(indentation);
-
-  fprintf(outfile, "%spop temp 0\n", indentation);
-}
-
-void emitInstanceForCall(ScopedSymbolTableEntry *entry)
+/** private
+ * emits the appropriate push based on the kind of the entry
+ */
+void emitPushScopedTableEntry(ScopedSymbolTableEntry *entry)
 {
   char indentation[indentSize(indent)];
   makeIndentation(indentation);
@@ -135,6 +122,64 @@ void emitInstanceForCall(ScopedSymbolTableEntry *entry)
   default:
     error("failed to emit instance for call");
   }
+}
+
+/** emits code to swap the top variables of the stack */
+void emitSwapStack()
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%spop temp 0\n", indentation);
+  fprintf(outfile, "%spop temp 1\n", indentation);
+  fprintf(outfile, "%spush temp 0\n", indentation);
+  fprintf(outfile, "%spush temp 1\n", indentation);
+}
+
+/** pre-condition
+ * we have already emit instructions which
+ * 1. push the value to assign
+ * 2. push the index
+ *
+ * this function is only going to perform the assignment
+ */
+void emitArrayAssignment(ScopedSymbolTableEntry *entry)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  // push entry <- get the base address
+  emitPushScopedTableEntry(entry);
+
+  // add <-- base address + i
+  fprintf(outfile, "%sadd\n", indentation);
+  // pop pointer 1 ; align that to base address + i
+  fprintf(outfile, "%spop pointer 1\n", indentation);
+  // the value we wanted to push 
+  // is already on the stack (see precondition)
+  // so we pop it into the array
+  fprintf(outfile, "%spop that 0\n", indentation);
+}
+
+void emitVariableAssignment(ScopedSymbolTableEntry *entry)
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%spop %s %d\n", indentation, getSegment(entry->kind), entry->position);
+}
+
+void emitVoidFunctionCleanup()
+{
+  char indentation[indentSize(indent)];
+  makeIndentation(indentation);
+
+  fprintf(outfile, "%spop temp 0\n", indentation);
+}
+
+void emitInstanceForCall(ScopedSymbolTableEntry *entry)
+{
+  emitPushScopedTableEntry(entry);
 }
 
 void emitImplicitThis()
