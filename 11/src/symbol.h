@@ -22,6 +22,8 @@ typedef enum VariableKind {
   VK_VAR,
 } VariableKind;
 
+#define SYMBOL_TABLE_SIZE 100
+
 typedef struct ScopedSymbolTableEntry
 {
   Entry *name;
@@ -34,6 +36,8 @@ typedef struct ScopedSymbolTableEntry
  * rather than actually clearing memory */
 typedef struct ScopedSymbolTable
 {
+  char *name;
+
   // position for each kind
   uint8_t nextStatic;
   uint8_t nextField;
@@ -47,7 +51,8 @@ typedef struct ScopedSymbolTable
 } ScopedSymbolTable;
 
 /** resets the scoped symbol table */
-void clearSymbolTable(ScopedSymbolTable *table);
+void initSymbolTable(char *name, ScopedSymbolTable *table);
+void cleanSymbolTable(ScopedSymbolTable *table);
 
 /** accepts global symbols and defines scoped symbols */
 void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind);

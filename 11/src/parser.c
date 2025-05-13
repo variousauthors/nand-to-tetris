@@ -1012,7 +1012,7 @@ bool letStatement(Buffer *buffer)
 
   if (lookahead == TK_BRACKET_L)
   {
-    // this is an array assignment 
+    // this is an array assignment
     match(buffer, TK_BRACKET_L);
     emitSymbol("[");
     expression(buffer); // pushes the index to the stack
@@ -1160,9 +1160,9 @@ bool subroutineDec(Buffer *buffer)
 
   emitXMLOpenTag("subroutineDec");
 
-  ScopedSymbolTableEntry subroutineSymbolTableEntries[10];
+  ScopedSymbolTableEntry subroutineSymbolTableEntries[SYMBOL_TABLE_SIZE];
   subroutineSymbolTable.entries = subroutineSymbolTableEntries;
-  clearSymbolTable(&subroutineSymbolTable);
+  initSymbolTable("subroutineSymbolTable", &subroutineSymbolTable);
 
   switch (lookahead)
   {
@@ -1282,6 +1282,8 @@ bool subroutineDec(Buffer *buffer)
     return false;
   }
 
+  cleanSymbolTable(&subroutineSymbolTable);
+
   emitXMLCloseTag("subroutineDec");
 
   return true;
@@ -1289,13 +1291,12 @@ bool subroutineDec(Buffer *buffer)
 
 bool class(Buffer *buffer)
 {
-
   int tempval;
   currentLabel = 0;
 
-  ScopedSymbolTableEntry classSymbolTableEntries[10];
+  ScopedSymbolTableEntry classSymbolTableEntries[SYMBOL_TABLE_SIZE];
   classSymbolTable.entries = classSymbolTableEntries;
-  clearSymbolTable(&classSymbolTable);
+  initSymbolTable("classSymbolTable", &classSymbolTable);
 
   // class className { classVarDec* subroutineDec* }
 
@@ -1319,6 +1320,7 @@ bool class(Buffer *buffer)
   match(buffer, TK_BRACE_R);
 
   emitSymbol("}");
+  cleanSymbolTable(&classSymbolTable);
   emitClassClose();
 
   return true;

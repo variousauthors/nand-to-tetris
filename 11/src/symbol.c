@@ -55,8 +55,20 @@ int insert(char s[], int tok, int value)
 }
 
 /** == Scoped Symbol Table ==  */
-void clearSymbolTable(ScopedSymbolTable *table)
+void initSymbolTable(char *name, ScopedSymbolTable *table)
 {
+  table->name = name;
+  table->currentIndex = 0;
+  table->length = 0;
+  table->nextStatic = 0;
+  table->nextField = 0;
+  table->nextArg = 0;
+  table->nextVar = 0;
+}
+
+void cleanSymbolTable(ScopedSymbolTable *table)
+{
+  table->name = "\0";
   table->currentIndex = 0;
   table->length = 0;
   table->nextStatic = 0;
@@ -68,7 +80,6 @@ void clearSymbolTable(ScopedSymbolTable *table)
 void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind)
 {
   // TODO bounds checking on the underlying array
-
   table->entries[table->currentIndex].name = name;
   table->entries[table->currentIndex].type = type;
   table->entries[table->currentIndex].kind = kind;
