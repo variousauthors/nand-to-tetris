@@ -676,12 +676,11 @@ bool methodCall(Buffer *buffer, char *objectName)
   // push the object in question onto the stack
   ScopedSymbolTableEntry *entry = getIndexFromGlobalTables(objectName);
 
-  int argc = expressionList(buffer, lookahead == TK_PAREN_R);
-
   if (entry)
   {
     // we need to put the implicit this on the stack
     emitInstanceForCall(entry);
+    int argc = expressionList(buffer, lookahead == TK_PAREN_R);
 
     argc++;
 
@@ -692,6 +691,8 @@ bool methodCall(Buffer *buffer, char *objectName)
   }
   else
   {
+    int argc = expressionList(buffer, lookahead == TK_PAREN_R);
+
     // call Class.method n
     emitMethodCall(objectName, subroutineName, argc);
 
