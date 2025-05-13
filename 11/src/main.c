@@ -11,7 +11,8 @@
 
 char *currentFile;
 
-void makeOutFileName(const char *filename) {
+void makeOutFileName(const char *filename)
+{
   char *dot = strrchr(filename, '.');
   if (dot != NULL)
   {
@@ -103,13 +104,28 @@ int main(int argc, char *argv[])
       return 1;
     }
 
+    // first process Main.jack and if it is missing
+    // we abort. Main needs to be the first namespace
+    // in the VM code is why
     int code = 0;
+
+    char moduleName[PATH_MAX];
+    getModuleName("Main.jack", moduleName, PATH_MAX);
+
+    currentFile = moduleName;
+    char full_path[PATH_MAX];
+    snprintf(full_path, sizeof(full_path), "%s/%s", path, "Main.jack");
+
+    fprintf(stderr, "processing %s\n", full_path);
+    code |= parseSingleFile(full_path);
+
     struct dirent *entry;
     while ((entry = readdir(dir)) != NULL)
     {
       // Skip . and .. (current and parent directories)
-      if (entry->d_name[0] == '.')
+      if (entry->d_name[0] == '.') {
         continue;
+      }
 
       // skip files that do not end in .jack
       if (!isVMFile(entry->d_name, entry->d_namlen))
@@ -119,6 +135,12 @@ int main(int argc, char *argv[])
 
       char moduleName[PATH_MAX];
       getModuleName(entry->d_name, moduleName, PATH_MAX);
+
+      // skip Main.jack because we already did it
+      if (strcmp("Main", moduleName) == 0)
+      {
+        continue;
+      }
 
       currentFile = moduleName;
       char full_path[PATH_MAX];

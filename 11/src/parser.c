@@ -42,7 +42,7 @@ int parse(FILE *file)
 
   FILE *nullOut = fopen("/dev/null", "w");
   initEmitterVM(stdout);
-  initEmitterXML(nullOut);
+  initEmitterXML(stdout);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -354,72 +354,6 @@ bool term(Buffer *buffer)
     match(buffer, TK_PAREN_R);
     break;
   }
-  case TK_CLASS:
-  {
-    match(buffer, TK_CLASS);
-    emitKeyword("class");
-    break;
-  }
-  case TK_CONSTRUCTOR:
-  {
-    match(buffer, TK_CONSTRUCTOR);
-    emitKeyword("constructor");
-    break;
-  }
-  case TK_FUNCTION:
-  {
-    match(buffer, TK_FUNCTION);
-    emitKeyword("function");
-    break;
-  }
-  case TK_METHOD:
-  {
-    match(buffer, TK_METHOD);
-    emitKeyword("method");
-    break;
-  }
-  case TK_FIELD:
-  {
-    match(buffer, TK_FIELD);
-    emitKeyword("field");
-    break;
-  }
-  case TK_STATIC:
-  {
-    match(buffer, TK_STATIC);
-    emitKeyword("static");
-    break;
-  }
-  case TK_VAR:
-  {
-    match(buffer, TK_VAR);
-    emitKeyword("var");
-    break;
-  }
-  case TK_INT:
-  {
-    match(buffer, TK_INT);
-    emitKeyword("int");
-    break;
-  }
-  case TK_CHAR:
-  {
-    match(buffer, TK_CHAR);
-    emitKeyword("char");
-    break;
-  }
-  case TK_BOOLEAN:
-  {
-    match(buffer, TK_BOOLEAN);
-    emitKeyword("boolean");
-    break;
-  }
-  case TK_VOID:
-  {
-    match(buffer, TK_VOID);
-    emitKeyword("void");
-    break;
-  }
   case TK_TRUE:
   {
     match(buffer, TK_TRUE);
@@ -439,42 +373,6 @@ bool term(Buffer *buffer)
     match(buffer, TK_NULL);
     emitTermInteger(0);
     emitKeyword("null");
-    break;
-  }
-  case TK_LET:
-  {
-    match(buffer, TK_LET);
-    emitKeyword("let");
-    break;
-  }
-  case TK_DO:
-  {
-    match(buffer, TK_DO);
-    emitKeyword("do");
-    break;
-  }
-  case TK_IF:
-  {
-    match(buffer, TK_IF);
-    emitKeyword("if");
-    break;
-  }
-  case TK_ELSE:
-  {
-    match(buffer, TK_ELSE);
-    emitKeyword("else");
-    break;
-  }
-  case TK_WHILE:
-  {
-    match(buffer, TK_WHILE);
-    emitKeyword("while");
-    break;
-  }
-  case TK_RETURN:
-  {
-    match(buffer, TK_RETURN);
-    emitKeyword("return");
     break;
   }
   case TK_THIS:
