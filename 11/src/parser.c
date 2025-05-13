@@ -437,6 +437,7 @@ bool term(Buffer *buffer)
   case TK_NULL:
   {
     match(buffer, TK_NULL);
+    emitTermInteger(0);
     emitKeyword("null");
     break;
   }
