@@ -26,8 +26,8 @@ typedef enum VariableKind {
 
 typedef struct ScopedSymbolTableEntry
 {
-  Entry *name;
-  Entry *type;
+  char *name;
+  char *type;
   VariableKind kind;
   int position;
 } ScopedSymbolTableEntry;
@@ -55,7 +55,7 @@ void initSymbolTable(char *name, ScopedSymbolTable *table);
 void cleanSymbolTable(ScopedSymbolTable *table);
 
 /** accepts global symbols and defines scoped symbols */
-void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind);
+void defineScopedSymbol(ScopedSymbolTable *table, char *name, char *type, VariableKind kind);
 int indexOf(ScopedSymbolTable *table, char *name);
 void debugTable(char *context, ScopedSymbolTable *table);
 int varCount(ScopedSymbolTable *table, VariableKind kind);

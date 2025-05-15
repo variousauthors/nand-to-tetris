@@ -192,7 +192,7 @@ void emitVariableDefinitionXML(char *identifier)
   }
   else
   {
-    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, "declaration", entry->name->lexptr);
+    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, "declaration", entry->name);
   }
 }
 
@@ -214,6 +214,6 @@ void emitVariableReferenceXML(char *identifier)
   }
   else
   {
-    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, "reference", entry->name->lexptr);
+    fprintf(outfile, "%s<identifier category=\"%s\" position=\"%d\" mode=\"%s\"> %s </identifier>\n", indentation, getCategory(entry->kind), entry->position, "reference", entry->name);
   }
 }

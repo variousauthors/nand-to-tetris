@@ -77,7 +77,7 @@ void cleanSymbolTable(ScopedSymbolTable *table)
   table->nextVar = 0;
 }
 
-void defineScopedSymbol(ScopedSymbolTable *table, Entry *name, Entry *type, VariableKind kind)
+void defineScopedSymbol(ScopedSymbolTable *table, char *name, char *type, VariableKind kind)
 {
   // TODO bounds checking on the underlying array
   table->entries[table->currentIndex].name = name;
@@ -124,7 +124,7 @@ int indexOf(ScopedSymbolTable *table, char *name)
 {
   for (int i = 0; i < table->length; i++)
   {
-    if (strcmp(name, table->entries[i].name->lexptr) == 0)
+    if (strcmp(name, table->entries[i].name) == 0)
     {
       return i;
     }
@@ -174,9 +174,9 @@ void debugTable(char *context, ScopedSymbolTable *table)
 {
   for (int i = 0; i < table->length; i++)
   {
-    fprintf(stderr, "in %s -- name: %s\n", context, table->entries[i].name->lexptr);
+    fprintf(stderr, "in %s -- name: %s\n", context, table->entries[i].name);
     fprintf(stderr, "in %s -- kind: %d\n", context, table->entries[i].kind);
-    fprintf(stderr, "in %s -- type: %s\n", context, table->entries[i].type->lexptr);
+    fprintf(stderr, "in %s -- type: %s\n", context, table->entries[i].type);
     fprintf(stderr, "in %s -- position: %d\n", context, table->entries[i].position);
   }
 }

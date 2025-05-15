@@ -42,7 +42,7 @@ int parse(FILE *file)
 
   FILE *nullOut = fopen("/dev/null", "w");
   initEmitterVM(stdout);
-  initEmitterXML(stdout);
+  initEmitterXML(nullOut);
 
   char data[BUFFER_SIZE + 3];
   Buffer buffer;
@@ -83,14 +83,14 @@ bool identifierSubroutineDeclaration(Buffer *buffer)
   return true;
 }
 
-void defineVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
+void defineVariable(ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
 {
   defineScopedSymbol(table, entry->name, entry->type, entry->kind);
 }
 
 void nameVariable(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
 {
-  entry->name = &symtable[tokenval];
+  entry->name = symtable[tokenval].lexptr;
 }
 
 bool additionalVarName(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEntry *entry)
@@ -104,7 +104,7 @@ bool additionalVarName(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTab
   emitSymbol(",");
 
   nameVariable(buffer, table, entry);
-  defineVariable(buffer, table, entry);
+  defineVariable(table, entry);
   match(buffer, TK_IDENTIFIER);
   emitVariableDefinitionXML(identifierBuffer);
 
@@ -122,21 +122,21 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
   {
   case TK_INT:
   {
-    entry->type = &symtable[tokenval];
+    entry->type = symtable[tokenval].lexptr;
     match(buffer, TK_INT);
     emitXMLPrimitive("keyword", "int");
     return true;
   }
   case TK_CHAR:
   {
-    entry->type = &symtable[tokenval];
+    entry->type = symtable[tokenval].lexptr;
     match(buffer, TK_CHAR);
     emitXMLPrimitive("keyword", "char");
     return true;
   }
   case TK_BOOLEAN:
   {
-    entry->type = &symtable[tokenval];
+    entry->type = symtable[tokenval].lexptr;
     match(buffer, TK_BOOLEAN);
     emitXMLPrimitive("keyword", "boolean");
     return true;
@@ -145,7 +145,7 @@ bool varType(Buffer *buffer, ScopedSymbolTableEntry *entry)
   {
     // emit first because the buffer will be overwritten
     // if the next token is also an identifier
-    entry->type = &symtable[tokenval];
+    entry->type = symtable[tokenval].lexptr;
     emitIdentifierClass(identifierBuffer, "reference");
     match(buffer, TK_IDENTIFIER);
     return true;
@@ -214,7 +214,7 @@ bool parameter(Buffer *buffer, ScopedSymbolTable *table)
 
   varType(buffer, &entry);
   nameVariable(buffer, table, &entry);
-  defineVariable(buffer, table, &entry);
+  defineVariable(table, &entry);
   match(buffer, TK_IDENTIFIER);
   emitVariableDefinitionXML(identifierBuffer);
 
@@ -255,7 +255,7 @@ bool varDecDetails(Buffer *buffer, ScopedSymbolTable *table, ScopedSymbolTableEn
   // type varName (, varName)* ;
   varType(buffer, entry);
   nameVariable(buffer, table, entry);
-  defineVariable(buffer, table, entry);
+  defineVariable(table, entry);
   match(buffer, TK_IDENTIFIER);
   emitVariableDefinitionXML(identifierBuffer);
 
@@ -685,7 +685,7 @@ bool methodCall(Buffer *buffer, char *objectName)
     argc++;
 
     // call Class.method n
-    emitMethodCall(entry->type->lexptr, subroutineName, argc);
+    emitMethodCall(entry->type, subroutineName, argc);
 
     match(buffer, TK_PAREN_R);
   }
@@ -1143,6 +1143,14 @@ bool subroutineDec(Buffer *buffer)
     returnType(buffer);
     emitIdentifierSubroutine(identifierBuffer, "declaration");
     char *subroutineName = symtable[tokenval].lexptr;
+
+    // we need to inject "this" into the parameter list
+    ScopedSymbolTableEntry entry;
+    entry.kind = VK_ARG;
+    entry.type = currentFile;
+    entry.name = symtable[lookup("this")].lexptr;
+    defineVariable(&subroutineSymbolTable, &entry);
+
     match(buffer, TK_IDENTIFIER);
     match(buffer, TK_PAREN_L);
     emitSymbol("(");
@@ -1157,8 +1165,11 @@ bool subroutineDec(Buffer *buffer)
     while (varDec(buffer, &subroutineSymbolTable))
       ;
 
-    emitFunctionDeclaration(currentFile, subroutineName, varCount(&subroutineSymbolTable, VK_VAR));
-    // methods need to slip this into argument 0
+
+    // we add 1 for the implicit this
+    emitFunctionDeclaration(currentFile, subroutineName, varCount(&subroutineSymbolTable, VK_VAR) + 1);
+
+    // methods need to addign argument 0 to this
     // push argument 0
     // pop pointer 0
     emitImplicitThis();
